@@ -1,26 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Drawing;
 
 namespace KMLEditor
 {
     public class KMLElement
     {
-        public string Element { get => "[Element]"; }
-
-        public int elementLineNumber = -1;
-
         public const int selectionMargin = 3;
         public const int insideSelectionMargin = 4;
         public const int minimumSize = 2;
+
+        private static int lastId = -1;
+
+        public int id = ++lastId;
+
+        public string Element { get => "[Element]"; }
+
+        public int elementLineNumber = -1;
 
         public bool isDirty;
         public KMLFile kmlFile;
 
         public bool isSelected;
+
+        public virtual KMLElement CopyFrom(KMLElement from)
+        {
+            id = from.id;
+            elementLineNumber = from.elementLineNumber;
+            isDirty = from.isDirty;
+            kmlFile = from.kmlFile;
+            isSelected = from.isSelected;
+            return this;
+        }
+        public virtual KMLElement Clone()
+        {
+            return new KMLElement().CopyFrom(this);
+        }
     }
 
     public class KMLElementWithOffset : KMLElement
@@ -234,6 +247,23 @@ namespace KMLEditor
                 kmlElementWithOffsetAndSizeAndDown.DownY += OffsetY - backupOffsetY;
             }
         }
+
+        public override KMLElement CopyFrom(KMLElement from)
+        {
+            base.CopyFrom(from);
+            KMLElementWithOffset fromWithOffset = from as KMLElementWithOffset;
+            if(fromWithOffset != null)
+            {
+                rectangle = fromWithOffset.rectangle;
+                offsetLineNumber = fromWithOffset.offsetLineNumber;
+                dragRectangle = fromWithOffset.dragRectangle;
+            }
+            return this;
+        }
+        public override KMLElement Clone()
+        {
+            return new KMLElementWithOffset().CopyFrom(this);
+        }
     }
 
     public class KMLElementWithOffsetAndSize : KMLElementWithOffset
@@ -241,7 +271,22 @@ namespace KMLEditor
         public int SizeWidth { get => rectangle.Width; set { if (rectangle.Width != value) { rectangle.Width = value; isDirty = true; } } }
         public int SizeHeight { get => rectangle.Height; set { if (rectangle.Height != value) { rectangle.Height = value; isDirty = true; } } }
         public int sizeLineNumber = -1;
-     }
+
+        public override KMLElement CopyFrom(KMLElement from)
+        {
+            base.CopyFrom(from);
+            KMLElementWithOffsetAndSize fromWithOffsetAndSize = from as KMLElementWithOffsetAndSize;
+            if (fromWithOffsetAndSize != null)
+            {
+                sizeLineNumber = fromWithOffsetAndSize.sizeLineNumber;
+            }
+            return this;
+        }
+        public override KMLElement Clone()
+        {
+            return new KMLElementWithOffsetAndSize().CopyFrom(this);
+        }
+    }
 
     public class KMLBackground : KMLElementWithOffsetAndSize
     {
@@ -275,6 +320,23 @@ namespace KMLEditor
         public int? DownX { get => downX; set { if (downX != value) { downX = value; isDirty = true; } } }
         public int? DownY { get => downY; set { if (downY != value) { downY = value; isDirty = true; } } }
         public int downLineNumber = -1;
+
+        public override KMLElement CopyFrom(KMLElement from)
+        {
+            base.CopyFrom(from);
+            KMLElementWithOffsetAndSizeAndDown fromWithOffsetAndSizeAndDown = from as KMLElementWithOffsetAndSizeAndDown;
+            if (fromWithOffsetAndSizeAndDown != null)
+            {
+                downX = fromWithOffsetAndSizeAndDown.downX;
+                downY = fromWithOffsetAndSizeAndDown.downY;
+                downLineNumber = fromWithOffsetAndSizeAndDown.downLineNumber;
+            }
+            return this;
+        }
+        public override KMLElement Clone()
+        {
+            return new KMLElementWithOffsetAndSizeAndDown().CopyFrom(this);
+        }
     }
 
     public class KMLAnnunciator : KMLElementWithOffsetAndSizeAndDown
@@ -283,6 +345,21 @@ namespace KMLEditor
 
         private int number;
         public int Number { get => number; set { if (number != value) { number = value; isDirty = true; } } }
+
+        public override KMLElement CopyFrom(KMLElement from)
+        {
+            base.CopyFrom(from);
+            KMLAnnunciator fromAnnunciator = from as KMLAnnunciator;
+            if (fromAnnunciator != null)
+            {
+                number = fromAnnunciator.number;
+            }
+            return this;
+        }
+        public override KMLElement Clone()
+        {
+            return new KMLAnnunciator().CopyFrom(this);
+        }
     }
 
     public class KMLButton : KMLElementWithOffsetAndSizeAndDown
@@ -295,5 +372,22 @@ namespace KMLEditor
         private int type;
         public int Type { get => type; set { if (type != value) { type = value; isDirty = true; } } }
         public int typeLineNumber = -1;
-    };
+
+        public override KMLElement CopyFrom(KMLElement from)
+        {
+            base.CopyFrom(from);
+            KMLButton fromButton = from as KMLButton;
+            if (fromButton != null)
+            {
+                number = fromButton.number;
+                type = fromButton.type;
+                typeLineNumber = fromButton.typeLineNumber;
+            }
+            return this;
+        }
+        public override KMLElement Clone()
+        {
+            return new KMLButton().CopyFrom(this);
+        }
+    }
 }

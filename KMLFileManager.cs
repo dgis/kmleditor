@@ -15,8 +15,7 @@ namespace KMLEditor
 
         List<KMLElement> kmlElements = new List<KMLElement>();
         List<KMLElementWithOffset> kmlElementsWithOffset = new List<KMLElementWithOffset>();
-        Dictionary<int, KMLAnnunciator> kmlAnnunciatorsPerNumber = new Dictionary<int, KMLAnnunciator>();
-        Dictionary<int, KMLButton> kmlButtonsPerNumber = new Dictionary<int, KMLButton>();
+        Dictionary<int, KMLElement> kmlElementsPerId = new Dictionary<int, KMLElement>();
 
         Regex regexKMLBitmap = new Regex(@"^(?<prefix>\s*Bitmap\s*)""(?<filename>.*)""(?<suffix>.*)$");
         Regex regexKMLInclude = new Regex(@"^(?<prefix>\s*Include\s*)""(?<filename>.*)""(?<suffix>.*)$");
@@ -42,20 +41,37 @@ namespace KMLEditor
             kmlFilesPerFilename.Clear();
             isRootKMLFile = true;
             kmlElements.Clear();
-            kmlAnnunciatorsPerNumber.Clear();
-            kmlButtonsPerNumber.Clear();
+            kmlElementsWithOffset.Clear();
+            kmlElementsPerId.Clear();
         }
 
 
-        public KMLFile GetRootFile() { return kmlFileRoot; }
         public ICollection<KMLElement> GetElements() { return kmlElements; }
         public ICollection<KMLElementWithOffset> GetElementsWithOffsetAndSize()
         {
             return kmlElementsWithOffset;
         }
+        public void AddKMLElement(KMLElement kmlElement)
+        {
+            kmlElementsPerId[kmlElement.id] = kmlElement;
+            kmlElements.Add(kmlElement);
+            if (kmlElement is KMLElementWithOffset)
+                kmlElementsWithOffset.Add((KMLElementWithOffset)kmlElement);
+        }
+
+        public KMLElement GetElementById(int id)
+        {
+            return kmlElementsPerId[id];
+        }
+        public KMLElementWithOffset GetElementWithOffsetById(int id)
+        {
+            return kmlElementsPerId[id] as KMLElementWithOffset;
+        }
+
+
+        public KMLFile GetRootFile() { return kmlFileRoot; }
         public string BitmapFilename { get; private set; } = null;
         public string RootBasePath { get; private set; } = "";
-
         public IList<KMLFile> GetFiles() { return kmlFiles; }
 
         public bool AddKMLFile(String filename)
@@ -136,8 +152,7 @@ namespace KMLEditor
                             currentKMLBackground = new KMLBackground();
                             currentKMLBackground.kmlFile = kmlFile;
                             currentKMLBackground.elementLineNumber = i;
-                            kmlElements.Add(currentKMLBackground);
-                            kmlElementsWithOffset.Add(currentKMLBackground);
+                            AddKMLElement(currentKMLBackground);
                         }
                     }
                     else if (trimmedLine.StartsWith("Lcd"))
@@ -146,8 +161,7 @@ namespace KMLEditor
                         currentKMLLcd = new KMLLcd();
                         currentKMLLcd.kmlFile = kmlFile;
                         currentKMLLcd.elementLineNumber = i;
-                        kmlElements.Add(currentKMLLcd);
-                        kmlElementsWithOffset.Add(currentKMLLcd);
+                        AddKMLElement(currentKMLLcd);
                     }
                     else if (trimmedLine.StartsWith("Digit"))
                     {
@@ -158,8 +172,7 @@ namespace KMLEditor
                             currentKMLDigit = new KMLDigit();
                             currentKMLDigit.kmlFile = kmlFile;
                             currentKMLDigit.elementLineNumber = i;
-                            kmlElements.Add(currentKMLDigit);
-                            kmlElementsWithOffset.Add(currentKMLDigit);
+                            AddKMLElement(currentKMLDigit);
                         }
                     }
                     else if (trimmedLine.StartsWith("Annunciator"))
@@ -173,9 +186,7 @@ namespace KMLEditor
                             currentKMLAnnunciator.kmlFile = kmlFile;
                             currentKMLAnnunciator.elementLineNumber = i;
                             currentKMLAnnunciator.Number = number;
-                            kmlElements.Add(currentKMLAnnunciator);
-                            kmlElementsWithOffset.Add(currentKMLAnnunciator);
-                            kmlAnnunciatorsPerNumber[number] = currentKMLAnnunciator;
+                            AddKMLElement(currentKMLAnnunciator);
                         }
                     }
                     else if (trimmedLine.StartsWith("Button"))
@@ -189,9 +200,7 @@ namespace KMLEditor
                             currentButton.kmlFile = kmlFile;
                             currentButton.elementLineNumber = i;
                             currentButton.Number = number;
-                            kmlElements.Add(currentButton);
-                            kmlElementsWithOffset.Add(currentButton);
-                            kmlButtonsPerNumber[number] = currentButton;
+                            AddKMLElement(currentButton);
                         }
                     }
                     else if (trimmedLine.StartsWith("OnDown"))

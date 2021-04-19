@@ -37,10 +37,11 @@ namespace KMLEditor
         public delegate bool ContentMouseEventHandler(object sender, MouseEventArgs e);
         public event ContentMouseEventHandler ContentMouseDown;
         public event ContentMouseEventHandler ContentMouseMove;
-        public event ContentMouseEventHandler ContentMouseUp;
+		public event ContentMouseEventHandler ContentMouseUp;
+		public event ContentMouseEventHandler ContentMouseWheel;
 
 
-        public Point VirtualPoint
+		public Point VirtualPoint
 		{
 			get { return this.virtualPoint; }
 			set { this.virtualPoint = value; }
@@ -116,6 +117,9 @@ namespace KMLEditor
 
 		void scrolledControl_MouseWheel(object sender, MouseEventArgs e)
 		{
+			if (ContentMouseWheel != null && ContentMouseWheel.Invoke(this, e))
+				return;
+
 			if ((ModifierKeys & Keys.Control) != Keys.Control)
 			{
 				int scrollBarValue = this.vScrollBar.Value;
