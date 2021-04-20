@@ -56,12 +56,14 @@
             this.contentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.propertyGridSelectedElement = new System.Windows.Forms.PropertyGrid();
+            this.splitContainerVerticalLeft = new System.Windows.Forms.SplitContainer();
             this.tabControlKMLFiles = new System.Windows.Forms.TabControl();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.splitContainerVerticalRight = new System.Windows.Forms.SplitContainer();
             this.scrollingControlContainer = new KMLEditor.ScrollingControlContainer();
+            this.splitContainerHorizontalRight = new System.Windows.Forms.SplitContainer();
+            this.listBoxSelectedElement = new System.Windows.Forms.ListBox();
+            this.propertyGridSelectedElement = new System.Windows.Forms.PropertyGrid();
             this.statusStripMain = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabelCoordinates = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabelZoom = new System.Windows.Forms.ToolStripStatusLabel();
@@ -76,22 +78,27 @@
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButtonUpdateKMLSource = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonAllowBackgroundSelection = new System.Windows.Forms.ToolStripButton();
+            this.toolStripComboBoxDownPart = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripButtonAllowMoveDownPart = new System.Windows.Forms.ToolStripButton();
             this.cutToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.copyToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.pasteToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.helpToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButtonHelp = new System.Windows.Forms.ToolStripButton();
             this.menuStripMain.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel1.SuspendLayout();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerVerticalLeft)).BeginInit();
+            this.splitContainerVerticalLeft.Panel1.SuspendLayout();
+            this.splitContainerVerticalLeft.Panel2.SuspendLayout();
+            this.splitContainerVerticalLeft.SuspendLayout();
             this.panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerVerticalRight)).BeginInit();
+            this.splitContainerVerticalRight.Panel1.SuspendLayout();
+            this.splitContainerVerticalRight.Panel2.SuspendLayout();
+            this.splitContainerVerticalRight.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerHorizontalRight)).BeginInit();
+            this.splitContainerHorizontalRight.Panel1.SuspendLayout();
+            this.splitContainerHorizontalRight.Panel2.SuspendLayout();
+            this.splitContainerHorizontalRight.SuspendLayout();
             this.statusStripMain.SuspendLayout();
             this.toolStripMain.SuspendLayout();
             this.SuspendLayout();
@@ -130,7 +137,7 @@
             this.newToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
             this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.newToolStripMenuItem.Text = "&New";
             this.newToolStripMenuItem.Visible = false;
             // 
@@ -140,7 +147,7 @@
             this.toolStripMenuItemOpen.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripMenuItemOpen.Name = "toolStripMenuItemOpen";
             this.toolStripMenuItemOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.toolStripMenuItemOpen.Size = new System.Drawing.Size(180, 22);
+            this.toolStripMenuItemOpen.Size = new System.Drawing.Size(146, 22);
             this.toolStripMenuItemOpen.Text = "&Open";
             this.toolStripMenuItemOpen.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
@@ -148,14 +155,14 @@
             // 
             this.reloadToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.reloadToolStripMenuItem.Name = "reloadToolStripMenuItem";
-            this.reloadToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.reloadToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.reloadToolStripMenuItem.Text = "&Reload";
             this.reloadToolStripMenuItem.Click += new System.EventHandler(this.reloadToolStripMenuItem_Click);
             // 
             // toolStripSeparator
             // 
             this.toolStripSeparator.Name = "toolStripSeparator";
-            this.toolStripSeparator.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator.Size = new System.Drawing.Size(143, 6);
             // 
             // saveToolStripMenuItem
             // 
@@ -163,26 +170,26 @@
             this.saveToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.saveToolStripMenuItem.Text = "&Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // saveAsToolStripMenuItem
             // 
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.saveAsToolStripMenuItem.Text = "Save &As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(143, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -297,59 +304,118 @@
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "&Help";
-            this.helpToolStripMenuItem.Visible = false;
             // 
             // contentsToolStripMenuItem
             // 
             this.contentsToolStripMenuItem.Name = "contentsToolStripMenuItem";
             this.contentsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.contentsToolStripMenuItem.Text = "&Contents";
+            this.contentsToolStripMenuItem.Visible = false;
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
             this.toolStripSeparator5.Size = new System.Drawing.Size(119, 6);
+            this.toolStripSeparator5.Visible = false;
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.aboutToolStripMenuItem.Text = "&About...";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.toolStripButtonHelp_Click);
             // 
-            // splitContainer1
+            // splitContainerVerticalLeft
             // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 49);
-            this.splitContainer1.Name = "splitContainer1";
+            this.splitContainerVerticalLeft.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainerVerticalLeft.Location = new System.Drawing.Point(0, 49);
+            this.splitContainerVerticalLeft.Name = "splitContainerVerticalLeft";
             // 
-            // splitContainer1.Panel1
+            // splitContainerVerticalLeft.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
+            this.splitContainerVerticalLeft.Panel1.Controls.Add(this.tabControlKMLFiles);
             // 
-            // splitContainer1.Panel2
+            // splitContainerVerticalLeft.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.panel1);
-            this.splitContainer1.Size = new System.Drawing.Size(1135, 655);
-            this.splitContainer1.SplitterDistance = 416;
-            this.splitContainer1.TabIndex = 1;
+            this.splitContainerVerticalLeft.Panel2.Controls.Add(this.panel1);
+            this.splitContainerVerticalLeft.Size = new System.Drawing.Size(1135, 655);
+            this.splitContainerVerticalLeft.SplitterDistance = 263;
+            this.splitContainerVerticalLeft.TabIndex = 1;
             // 
-            // splitContainer2
+            // tabControlKMLFiles
             // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Name = "splitContainer2";
-            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            this.tabControlKMLFiles.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControlKMLFiles.Location = new System.Drawing.Point(0, 0);
+            this.tabControlKMLFiles.Name = "tabControlKMLFiles";
+            this.tabControlKMLFiles.SelectedIndex = 0;
+            this.tabControlKMLFiles.Size = new System.Drawing.Size(263, 655);
+            this.tabControlKMLFiles.TabIndex = 0;
             // 
-            // splitContainer2.Panel1
+            // panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.propertyGridSelectedElement);
+            this.panel1.Controls.Add(this.splitContainerVerticalRight);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(868, 655);
+            this.panel1.TabIndex = 1;
             // 
-            // splitContainer2.Panel2
+            // splitContainerVerticalRight
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.tabControlKMLFiles);
-            this.splitContainer2.Size = new System.Drawing.Size(416, 655);
-            this.splitContainer2.SplitterDistance = 175;
-            this.splitContainer2.TabIndex = 1;
+            this.splitContainerVerticalRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainerVerticalRight.Location = new System.Drawing.Point(0, 0);
+            this.splitContainerVerticalRight.Name = "splitContainerVerticalRight";
+            // 
+            // splitContainerVerticalRight.Panel1
+            // 
+            this.splitContainerVerticalRight.Panel1.Controls.Add(this.scrollingControlContainer);
+            // 
+            // splitContainerVerticalRight.Panel2
+            // 
+            this.splitContainerVerticalRight.Panel2.Controls.Add(this.splitContainerHorizontalRight);
+            this.splitContainerVerticalRight.Size = new System.Drawing.Size(868, 655);
+            this.splitContainerVerticalRight.SplitterDistance = 531;
+            this.splitContainerVerticalRight.TabIndex = 2;
+            // 
+            // scrollingControlContainer
+            // 
+            this.scrollingControlContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.scrollingControlContainer.Location = new System.Drawing.Point(0, 0);
+            this.scrollingControlContainer.Name = "scrollingControlContainer";
+            this.scrollingControlContainer.Size = new System.Drawing.Size(531, 655);
+            this.scrollingControlContainer.TabIndex = 1;
+            this.toolTipScrollingContainer.SetToolTip(this.scrollingControlContainer, "Hello\r\nqsdf qsdf qsd\r\nfq \r\nsdf");
+            this.scrollingControlContainer.VirtualPoint = new System.Drawing.Point(0, 0);
+            this.scrollingControlContainer.VirtualSize = new System.Drawing.Size(10, 10);
+            // 
+            // splitContainerHorizontalRight
+            // 
+            this.splitContainerHorizontalRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainerHorizontalRight.Location = new System.Drawing.Point(0, 0);
+            this.splitContainerHorizontalRight.Name = "splitContainerHorizontalRight";
+            this.splitContainerHorizontalRight.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainerHorizontalRight.Panel1
+            // 
+            this.splitContainerHorizontalRight.Panel1.Controls.Add(this.listBoxSelectedElement);
+            // 
+            // splitContainerHorizontalRight.Panel2
+            // 
+            this.splitContainerHorizontalRight.Panel2.Controls.Add(this.propertyGridSelectedElement);
+            this.splitContainerHorizontalRight.Size = new System.Drawing.Size(333, 655);
+            this.splitContainerHorizontalRight.SplitterDistance = 278;
+            this.splitContainerHorizontalRight.TabIndex = 1;
+            // 
+            // listBoxSelectedElement
+            // 
+            this.listBoxSelectedElement.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listBoxSelectedElement.FormattingEnabled = true;
+            this.listBoxSelectedElement.Location = new System.Drawing.Point(0, 0);
+            this.listBoxSelectedElement.Name = "listBoxSelectedElement";
+            this.listBoxSelectedElement.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            this.listBoxSelectedElement.Size = new System.Drawing.Size(333, 278);
+            this.listBoxSelectedElement.TabIndex = 0;
+            this.listBoxSelectedElement.SelectedIndexChanged += new System.EventHandler(this.listBoxSelectedElement_SelectedIndexChanged);
             // 
             // propertyGridSelectedElement
             // 
@@ -358,40 +424,11 @@
             this.propertyGridSelectedElement.Location = new System.Drawing.Point(0, 0);
             this.propertyGridSelectedElement.Name = "propertyGridSelectedElement";
             this.propertyGridSelectedElement.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.propertyGridSelectedElement.Size = new System.Drawing.Size(416, 175);
+            this.propertyGridSelectedElement.Size = new System.Drawing.Size(333, 373);
             this.propertyGridSelectedElement.TabIndex = 0;
             this.propertyGridSelectedElement.ToolbarVisible = false;
             this.toolTipScrollingContainer.SetToolTip(this.propertyGridSelectedElement, "Element(s) properties");
             this.propertyGridSelectedElement.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.propertyGridSelectedElement_PropertyValueChanged);
-            // 
-            // tabControlKMLFiles
-            // 
-            this.tabControlKMLFiles.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControlKMLFiles.Location = new System.Drawing.Point(0, 0);
-            this.tabControlKMLFiles.Name = "tabControlKMLFiles";
-            this.tabControlKMLFiles.SelectedIndex = 0;
-            this.tabControlKMLFiles.Size = new System.Drawing.Size(416, 476);
-            this.tabControlKMLFiles.TabIndex = 0;
-            // 
-            // panel1
-            // 
-            this.panel1.Controls.Add(this.scrollingControlContainer);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(715, 655);
-            this.panel1.TabIndex = 1;
-            // 
-            // scrollingControlContainer
-            // 
-            this.scrollingControlContainer.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.scrollingControlContainer.Location = new System.Drawing.Point(0, 0);
-            this.scrollingControlContainer.Name = "scrollingControlContainer";
-            this.scrollingControlContainer.Size = new System.Drawing.Size(715, 655);
-            this.scrollingControlContainer.TabIndex = 1;
-            this.toolTipScrollingContainer.SetToolTip(this.scrollingControlContainer, "Hello\r\nqsdf qsdf qsd\r\nfq \r\nsdf");
-            this.scrollingControlContainer.VirtualPoint = new System.Drawing.Point(0, 0);
-            this.scrollingControlContainer.VirtualSize = new System.Drawing.Size(10, 10);
             // 
             // statusStripMain
             // 
@@ -430,12 +467,13 @@
             this.toolStripSeparator6,
             this.toolStripButtonUpdateKMLSource,
             this.toolStripButtonAllowBackgroundSelection,
+            this.toolStripComboBoxDownPart,
             this.toolStripButtonAllowMoveDownPart,
             this.cutToolStripButton,
             this.copyToolStripButton,
             this.pasteToolStripButton,
             this.toolStripSeparator7,
-            this.helpToolStripButton});
+            this.toolStripButtonHelp});
             this.toolStripMain.Location = new System.Drawing.Point(0, 24);
             this.toolStripMain.Name = "toolStripMain";
             this.toolStripMain.Size = new System.Drawing.Size(1135, 25);
@@ -523,6 +561,19 @@
             this.toolStripButtonAllowBackgroundSelection.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonAllowBackgroundSelection.Text = "Allow Background Selection";
             // 
+            // toolStripComboBoxDownPart
+            // 
+            this.toolStripComboBoxDownPart.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.toolStripComboBoxDownPart.DropDownWidth = 120;
+            this.toolStripComboBoxDownPart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.toolStripComboBoxDownPart.Items.AddRange(new object[] {
+            "Move Element Only",
+            "Move Down Part Only",
+            "Move Both"});
+            this.toolStripComboBoxDownPart.Name = "toolStripComboBoxDownPart";
+            this.toolStripComboBoxDownPart.Size = new System.Drawing.Size(121, 25);
+            this.toolStripComboBoxDownPart.Visible = false;
+            // 
             // toolStripButtonAllowMoveDownPart
             // 
             this.toolStripButtonAllowMoveDownPart.CheckOnClick = true;
@@ -567,44 +618,51 @@
             // 
             this.toolStripSeparator7.Name = "toolStripSeparator7";
             this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
-            this.toolStripSeparator7.Visible = false;
             // 
-            // helpToolStripButton
+            // toolStripButtonHelp
             // 
-            this.helpToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.helpToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("helpToolStripButton.Image")));
-            this.helpToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.helpToolStripButton.Name = "helpToolStripButton";
-            this.helpToolStripButton.Size = new System.Drawing.Size(23, 22);
-            this.helpToolStripButton.Text = "He&lp";
-            this.helpToolStripButton.Visible = false;
+            this.toolStripButtonHelp.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonHelp.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonHelp.Image")));
+            this.toolStripButtonHelp.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonHelp.Name = "toolStripButtonHelp";
+            this.toolStripButtonHelp.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButtonHelp.Text = "He&lp";
+            this.toolStripButtonHelp.Click += new System.EventHandler(this.toolStripButtonHelp_Click);
             // 
             // KMLEditorForm
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1135, 726);
-            this.Controls.Add(this.splitContainer1);
+            this.Controls.Add(this.splitContainerVerticalLeft);
             this.Controls.Add(this.toolStripMain);
             this.Controls.Add(this.statusStripMain);
             this.Controls.Add(this.menuStripMain);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStripMain;
             this.Name = "KMLEditorForm";
             this.Text = "KML Editor";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.KMLEditorForm_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.KMLEditorForm_FormClosed);
             this.Load += new System.EventHandler(this.KMLEditorForm_Load);
+            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.KMLEditorForm_DragDrop);
+            this.DragEnter += new System.Windows.Forms.DragEventHandler(this.KMLEditorForm_DragEnter);
             this.menuStripMain.ResumeLayout(false);
             this.menuStripMain.PerformLayout();
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
-            this.splitContainer1.ResumeLayout(false);
-            this.splitContainer2.Panel1.ResumeLayout(false);
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
+            this.splitContainerVerticalLeft.Panel1.ResumeLayout(false);
+            this.splitContainerVerticalLeft.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerVerticalLeft)).EndInit();
+            this.splitContainerVerticalLeft.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            this.splitContainerVerticalRight.Panel1.ResumeLayout(false);
+            this.splitContainerVerticalRight.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerVerticalRight)).EndInit();
+            this.splitContainerVerticalRight.ResumeLayout(false);
+            this.splitContainerHorizontalRight.Panel1.ResumeLayout(false);
+            this.splitContainerHorizontalRight.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerHorizontalRight)).EndInit();
+            this.splitContainerHorizontalRight.ResumeLayout(false);
             this.statusStripMain.ResumeLayout(false);
             this.statusStripMain.PerformLayout();
             this.toolStripMain.ResumeLayout(false);
@@ -641,11 +699,10 @@
         private System.Windows.Forms.ToolStripMenuItem contentsToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.SplitContainer splitContainerVerticalLeft;
         private System.Windows.Forms.TabControl tabControlKMLFiles;
         private System.Windows.Forms.Panel panel1;
         private ScrollingControlContainer scrollingControlContainer;
-        private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.PropertyGrid propertyGridSelectedElement;
         private System.Windows.Forms.StatusStrip statusStripMain;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelCoordinates;
@@ -659,7 +716,7 @@
         private System.Windows.Forms.ToolStripButton copyToolStripButton;
         private System.Windows.Forms.ToolStripButton pasteToolStripButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
-        private System.Windows.Forms.ToolStripButton helpToolStripButton;
+        private System.Windows.Forms.ToolStripButton toolStripButtonHelp;
         private System.Windows.Forms.ToolStripButton toolStripButtonUpdateKMLSource;
         private System.Windows.Forms.ToolStripButton toolStripButtonAllowBackgroundSelection;
         private System.Windows.Forms.ToolStripButton toolStripButtonAllowMoveDownPart;
@@ -668,6 +725,10 @@
         private System.Windows.Forms.ToolStripButton toolStripButtonRedo;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemOpen;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelZoom;
+        private System.Windows.Forms.ToolStripComboBox toolStripComboBoxDownPart;
+        private System.Windows.Forms.SplitContainer splitContainerVerticalRight;
+        private System.Windows.Forms.SplitContainer splitContainerHorizontalRight;
+        private System.Windows.Forms.ListBox listBoxSelectedElement;
     }
 }
 

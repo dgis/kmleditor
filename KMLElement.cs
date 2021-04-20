@@ -12,7 +12,11 @@ namespace KMLEditor
 
         public int id = ++lastId;
 
-        public string Element { get => "[Element]"; }
+        public virtual string Element { get => "[Element]"; }
+        public override string ToString()
+        {
+            return Element;
+        }
 
         public int elementLineNumber = -1;
 
@@ -38,13 +42,18 @@ namespace KMLEditor
 
     public class KMLElementWithOffset : KMLElement
     {
-        public Rectangle rectangle;
+        protected Rectangle rectangle;
+        protected Rectangle dragRectangle;
+        protected int? downX = null;
+        protected int? downY = null;
+        protected int? dragDownX = null;
+        protected int? dragDownY = null;
+
         public int OffsetX { get => rectangle.X; set { if (rectangle.X != value) { rectangle.X = value; isDirty = true; } } }
         public int OffsetY { get => rectangle.Y; set { if (rectangle.Y != value) { rectangle.Y = value; isDirty = true; } } }
         public int offsetLineNumber = -1;
 
 
-        public Rectangle dragRectangle;
 
         public bool HitTest(Point location)
         {
@@ -64,7 +73,9 @@ namespace KMLEditor
             Bottom,
             BottomLeft,
             Left,
-            Inside
+            Inside,
+            InsideDown,
+            Element
         }
 
         protected virtual bool AllowPart(SelectionPart part)
@@ -76,8 +87,8 @@ namespace KMLEditor
         {
             if (GetBoundForPart(SelectionPart.Inside).Contains(location))
                 return SelectionPart.Inside;
-            else if (GetBoundForPart(SelectionPart.Inside).Contains(location))
-                return SelectionPart.Inside;
+            else if (GetBoundForPart(SelectionPart.InsideDown).Contains(location))
+                return SelectionPart.InsideDown;
             else if (GetBoundForPart(SelectionPart.TopLeft).Contains(location))
                 return SelectionPart.TopLeft;
             else if (GetBoundForPart(SelectionPart.Top).Contains(location))
@@ -103,10 +114,14 @@ namespace KMLEditor
             {
                 switch (part)
                 {
+                    case SelectionPart.Element:
+                        return rectangle;
                     case SelectionPart.Inside:
-                        //return new Rectangle(OffsetX + selectionMargin, OffsetY + selectionMargin, SizeWidth - 2 * selectionMargin, SizeHeight - 2 * selectionMargin);
-                        //return new Rectangle(OffsetX + rectangle.Width / 2 - insideSelectionMargin, OffsetY /*+ SizeHeight / 2*/ - insideSelectionMargin, 2 * insideSelectionMargin, 2 * insideSelectionMargin);
                         return new Rectangle(OffsetX + selectionMargin + 1, OffsetY + selectionMargin + 1, 2 * insideSelectionMargin, 2 * insideSelectionMargin);
+                    case SelectionPart.InsideDown:
+                        if(downX != null && downY != null)
+                            return new Rectangle((int)downX + rectangle.Width - selectionMargin - 1 - 2 * insideSelectionMargin, (int)downY + rectangle.Height - selectionMargin - 1 - 2 * insideSelectionMargin, 2 * insideSelectionMargin, 2 * insideSelectionMargin);
+                        break;
                     case SelectionPart.TopLeft:
                         return new Rectangle(OffsetX - selectionMargin, OffsetY - selectionMargin, 2 * selectionMargin, 2 * selectionMargin);
                     case SelectionPart.Top:
@@ -130,122 +145,131 @@ namespace KMLEditor
 
         public void BackupForDragging()
         {
-            dragRectangle.X = rectangle.X;
-            dragRectangle.Y = rectangle.Y;
-            dragRectangle.Width = rectangle.Width;
-            dragRectangle.Height = rectangle.Height;
+            dragRectangle = rectangle;
+            dragDownX = downX;
+            dragDownY = downY;
         }
 
-        public void UpdateForDragging(int draggingDeltaX, int draggingDeltaY, SelectionPart draggingPart, bool isShiftPressed, bool updateDown)
+        public void UpdateForDragging(Point draggingDelta, SelectionPart draggingPart, bool isShiftPressed, bool updateDown)
         {
-            int backupOffsetX = OffsetX;
-            int backupOffsetY = OffsetY;
-
+            Rectangle rectangleNew = rectangle;
             switch (draggingPart)
             {
                 case SelectionPart.Inside:
-                    OffsetX = dragRectangle.X + draggingDeltaX;
-                    OffsetY = dragRectangle.Y + draggingDeltaY;
+                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
+                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
+                    break;
+                case SelectionPart.InsideDown:
+                    if(downX != null && downY != null)
+                    {
+                        downX = dragDownX + draggingDelta.X;
+                        downY = dragDownY + draggingDelta.Y;
+                    }
                     break;
                 case SelectionPart.TopLeft:
-                    OffsetX = dragRectangle.X + draggingDeltaX;
-                    OffsetY = dragRectangle.Y + draggingDeltaY;
+                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
+                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
                     if (isShiftPressed)
                     {
-                        rectangle.Width = dragRectangle.Width - 2 * draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height - 2 * draggingDeltaY;
+                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
                     }
                     else
                     {
-                        rectangle.Width = dragRectangle.Width - draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height - draggingDeltaY;
+                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
                     }
                     break;
                 case SelectionPart.Top:
-                    OffsetY = dragRectangle.Y + draggingDeltaY;
+                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
                     if (isShiftPressed)
-                        rectangle.Height = dragRectangle.Height - 2 * draggingDeltaY;
+                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
                     else
-                        rectangle.Height = dragRectangle.Height - draggingDeltaY;
+                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
                     break;
                 case SelectionPart.TopRight:
-                    OffsetY = dragRectangle.Y + draggingDeltaY;
+                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
                     if (isShiftPressed)
                     {
-                        OffsetX = dragRectangle.X - draggingDeltaX;
-                        rectangle.Width = dragRectangle.Width + 2 * draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height - 2 * draggingDeltaY;
+                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
+                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
                     }
                     else
                     {
-                        rectangle.Width = dragRectangle.Width + draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height - draggingDeltaY;
+                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
                     }
                     break;
                 case SelectionPart.Right:
                     if (isShiftPressed)
                     {
-                        OffsetX = dragRectangle.X - draggingDeltaX;
-                        rectangle.Width = dragRectangle.Width + 2 * draggingDeltaX;
+                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
+                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
                     }
                     else
-                        rectangle.Width = dragRectangle.Width + draggingDeltaX;
+                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
                     break;
                 case SelectionPart.BottomRight:
                     if (isShiftPressed)
                     {
-                        OffsetX = dragRectangle.X - draggingDeltaX;
-                        OffsetY = dragRectangle.Y - draggingDeltaY;
-                        rectangle.Width = dragRectangle.Width + 2 * draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height + 2 * draggingDeltaY;
+                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
+                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
+                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
                     }
                     else
                     {
-                        rectangle.Width = dragRectangle.Width + draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height + draggingDeltaY;
+                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
                     }
                     break;
                 case SelectionPart.Bottom:
                     if (isShiftPressed)
                     {
-                        OffsetY = dragRectangle.Y - draggingDeltaY;
-                        rectangle.Height = dragRectangle.Height + 2 * draggingDeltaY;
+                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
+                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
                     }
                     else
-                        rectangle.Height = dragRectangle.Height + draggingDeltaY;
+                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
                     break;
                 case SelectionPart.BottomLeft:
-                    OffsetX = dragRectangle.X + draggingDeltaX;
+                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
                     if (isShiftPressed)
                     {
-                        OffsetY = dragRectangle.Y - draggingDeltaY;
-                        rectangle.Height = dragRectangle.Height + 2 * draggingDeltaY;
-                        rectangle.Width = dragRectangle.Width - 2 * draggingDeltaX;
+                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
+                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
+                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
                     }
                     else
                     {
-                        rectangle.Width = dragRectangle.Width - draggingDeltaX;
-                        rectangle.Height = dragRectangle.Height + draggingDeltaY;
+                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
+                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
                     }
                     break;
                 case SelectionPart.Left:
-                    OffsetX = dragRectangle.X + draggingDeltaX;
+                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
                     if (isShiftPressed)
-                        rectangle.Width = dragRectangle.Width - 2 * draggingDeltaX;
+                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
                     else
-                        rectangle.Width = dragRectangle.Width - draggingDeltaX;
+                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
                     break;
             }
-            if (rectangle.Width < minimumSize)
-                rectangle.Width = minimumSize;
-            if (rectangle.Height < minimumSize)
-                rectangle.Height = minimumSize;
-            if (updateDown && this is KMLElementWithOffsetAndSizeAndDown)
+            if (rectangleNew.Width < minimumSize)
+                rectangleNew.Width = minimumSize;
+            if (rectangleNew.Height < minimumSize)
+                rectangleNew.Height = minimumSize;
+
+            if (this is KMLElementWithOffsetAndSizeAndDown)
             {
                 KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)this;
-                kmlElementWithOffsetAndSizeAndDown.DownX += OffsetX - backupOffsetX;
-                kmlElementWithOffsetAndSizeAndDown.DownY += OffsetY - backupOffsetY;
+                if (updateDown)
+                {
+                    kmlElementWithOffsetAndSizeAndDown.DownX += rectangleNew.X - rectangle.X;
+                    kmlElementWithOffsetAndSizeAndDown.DownY += rectangleNew.Y - rectangle.Y;
+                }
             }
+            rectangle = rectangleNew;
         }
 
         public override KMLElement CopyFrom(KMLElement from)
@@ -290,7 +314,7 @@ namespace KMLEditor
 
     public class KMLBackground : KMLElementWithOffsetAndSize
     {
-        public new string Element { get => "Background"; }
+        public override string Element { get => "Background"; }
     }
 
     public class KMLLcd : KMLElementWithOffset
@@ -300,23 +324,21 @@ namespace KMLEditor
             this.rectangle.Height = 50;
         }
 
-        public new string Element { get => "Lcd"; }
+        public override string Element { get => "Lcd"; }
 
         protected override bool AllowPart(SelectionPart part)
         {
-            return part == SelectionPart.Inside;
+            return part == SelectionPart.Inside || part == SelectionPart.Element;
         }
     }
 
     public class KMLDigit : KMLElementWithOffsetAndSize
     {
-        public new string Element { get => "Digit"; }
+        public override string Element { get => "Digit"; }
     }
 
     public class KMLElementWithOffsetAndSizeAndDown : KMLElementWithOffsetAndSize
     {
-        private int? downX = null;
-        private int? downY = null;
         public int? DownX { get => downX; set { if (downX != value) { downX = value; isDirty = true; } } }
         public int? DownY { get => downY; set { if (downY != value) { downY = value; isDirty = true; } } }
         public int downLineNumber = -1;
@@ -341,7 +363,12 @@ namespace KMLEditor
 
     public class KMLAnnunciator : KMLElementWithOffsetAndSizeAndDown
     {
-        public new string Element { get => "Annunciator"; }
+        public override string Element { get => "Annunciator"; }
+        public override string ToString()
+        {
+            return base.ToString() + " " + Number;
+        }
+
 
         private int number;
         public int Number { get => number; set { if (number != value) { number = value; isDirty = true; } } }
@@ -364,7 +391,11 @@ namespace KMLEditor
 
     public class KMLButton : KMLElementWithOffsetAndSizeAndDown
     {
-        public new string Element { get => "Button"; }
+        public override string Element { get => "Button"; }
+        public override string ToString()
+        {
+            return base.ToString() + " " + Number;
+        }
 
         private int number;
         public int Number { get => number; set { if (number != value) { number = value; isDirty = true; } } }
