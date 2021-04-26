@@ -43,14 +43,17 @@ namespace KMLEditor
             kmlElements.Clear();
             kmlElementsWithOffset.Clear();
             kmlElementsPerId.Clear();
+            BitmapFilename = null;
+            RootBasePath = "";
         }
 
-
         public ICollection<KMLElement> GetElements() { return kmlElements; }
+
         public ICollection<KMLElementWithOffset> GetElementsWithOffsetAndSize()
         {
             return kmlElementsWithOffset;
         }
+
         public void AddKMLElement(KMLElement kmlElement)
         {
             kmlElementsPerId[kmlElement.id] = kmlElement;
@@ -63,6 +66,7 @@ namespace KMLEditor
         {
             return kmlElementsPerId[id];
         }
+
         public KMLElementWithOffset GetElementWithOffsetById(int id)
         {
             return kmlElementsPerId[id] as KMLElementWithOffset;
@@ -70,8 +74,11 @@ namespace KMLEditor
 
 
         public KMLFile GetRootFile() { return kmlFileRoot; }
+
         public string BitmapFilename { get; private set; } = null;
+
         public string RootBasePath { get; private set; } = "";
+
         public IList<KMLFile> GetFiles() { return kmlFiles; }
 
         public bool AddKMLFile(String filename)

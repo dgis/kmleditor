@@ -60,13 +60,13 @@
             this.tabControlKMLFiles = new System.Windows.Forms.TabControl();
             this.panel1 = new System.Windows.Forms.Panel();
             this.splitContainerVerticalRight = new System.Windows.Forms.SplitContainer();
-            this.scrollingControlContainer = new KMLEditor.ScrollingControlContainer();
             this.splitContainerHorizontalRight = new System.Windows.Forms.SplitContainer();
             this.listBoxSelectedElement = new System.Windows.Forms.ListBox();
             this.propertyGridSelectedElement = new System.Windows.Forms.PropertyGrid();
             this.statusStripMain = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabelCoordinates = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabelZoom = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabelHelp = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolTipScrollingContainer = new System.Windows.Forms.ToolTip(this.components);
             this.toolStripMain = new System.Windows.Forms.ToolStrip();
             this.newToolStripButton = new System.Windows.Forms.ToolStripButton();
@@ -85,6 +85,7 @@
             this.pasteToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButtonHelp = new System.Windows.Forms.ToolStripButton();
+            this.scrollingControlContainer = new KMLEditor.ScrollingControlContainer();
             this.menuStripMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerVerticalLeft)).BeginInit();
             this.splitContainerVerticalLeft.Panel1.SuspendLayout();
@@ -377,17 +378,6 @@
             this.splitContainerVerticalRight.SplitterDistance = 531;
             this.splitContainerVerticalRight.TabIndex = 2;
             // 
-            // scrollingControlContainer
-            // 
-            this.scrollingControlContainer.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.scrollingControlContainer.Location = new System.Drawing.Point(0, 0);
-            this.scrollingControlContainer.Name = "scrollingControlContainer";
-            this.scrollingControlContainer.Size = new System.Drawing.Size(531, 655);
-            this.scrollingControlContainer.TabIndex = 1;
-            this.toolTipScrollingContainer.SetToolTip(this.scrollingControlContainer, "Hello\r\nqsdf qsdf qsd\r\nfq \r\nsdf");
-            this.scrollingControlContainer.VirtualPoint = new System.Drawing.Point(0, 0);
-            this.scrollingControlContainer.VirtualSize = new System.Drawing.Size(10, 10);
-            // 
             // splitContainerHorizontalRight
             // 
             this.splitContainerHorizontalRight.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -420,7 +410,6 @@
             // propertyGridSelectedElement
             // 
             this.propertyGridSelectedElement.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGridSelectedElement.HelpVisible = false;
             this.propertyGridSelectedElement.Location = new System.Drawing.Point(0, 0);
             this.propertyGridSelectedElement.Name = "propertyGridSelectedElement";
             this.propertyGridSelectedElement.PropertySort = System.Windows.Forms.PropertySort.NoSort;
@@ -434,7 +423,8 @@
             // 
             this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabelCoordinates,
-            this.toolStripStatusLabelZoom});
+            this.toolStripStatusLabelZoom,
+            this.toolStripStatusLabelHelp});
             this.statusStripMain.Location = new System.Drawing.Point(0, 704);
             this.statusStripMain.Name = "statusStripMain";
             this.statusStripMain.Size = new System.Drawing.Size(1135, 22);
@@ -450,6 +440,11 @@
             // 
             this.toolStripStatusLabelZoom.Name = "toolStripStatusLabelZoom";
             this.toolStripStatusLabelZoom.Size = new System.Drawing.Size(0, 17);
+            // 
+            // toolStripStatusLabelHelp
+            // 
+            this.toolStripStatusLabelHelp.Name = "toolStripStatusLabelHelp";
+            this.toolStripStatusLabelHelp.Size = new System.Drawing.Size(0, 17);
             // 
             // toolTipScrollingContainer
             // 
@@ -629,6 +624,17 @@
             this.toolStripButtonHelp.Text = "He&lp";
             this.toolStripButtonHelp.Click += new System.EventHandler(this.toolStripButtonHelp_Click);
             // 
+            // scrollingControlContainer
+            // 
+            this.scrollingControlContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.scrollingControlContainer.Location = new System.Drawing.Point(0, 0);
+            this.scrollingControlContainer.Name = "scrollingControlContainer";
+            this.scrollingControlContainer.Size = new System.Drawing.Size(531, 655);
+            this.scrollingControlContainer.TabIndex = 1;
+            this.toolTipScrollingContainer.SetToolTip(this.scrollingControlContainer, "Hello\r\nqsdf qsdf qsd\r\nfq \r\nsdf");
+            this.scrollingControlContainer.VirtualPoint = new System.Drawing.Point(0, 0);
+            this.scrollingControlContainer.VirtualSize = new System.Drawing.Size(10, 10);
+            // 
             // KMLEditorForm
             // 
             this.AllowDrop = true;
@@ -729,6 +735,7 @@
         private System.Windows.Forms.SplitContainer splitContainerVerticalRight;
         private System.Windows.Forms.SplitContainer splitContainerHorizontalRight;
         private System.Windows.Forms.ListBox listBoxSelectedElement;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelHelp;
     }
 }
 

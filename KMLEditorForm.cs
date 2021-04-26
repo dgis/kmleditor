@@ -5,7 +5,6 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using static KMLEditor.UndoManager;
 
 namespace KMLEditor
 {
@@ -26,11 +25,13 @@ namespace KMLEditor
         private Dictionary<KMLFile, UIElementForKMLFile> uiElementPerKMLFile = new Dictionary<KMLFile, UIElementForKMLFile>();
         private List<KMLElementWithOffset> selectedElements = new List<KMLElementWithOffset>();
         private List<KMLElementWithOffset> selectedElementsBeforeRectangleSelection = new List<KMLElementWithOffset>();
+        private MultipleSelection multipleSelection = new MultipleSelection();
 
         private KMLElementWithOffset draggingElement = null;
         private KMLElementWithOffset.SelectionPart draggingPart = KMLElementWithOffset.SelectionPart.None;
         private Point draggingStartLocation;
         private List<KMLElementWithOffset> draggingSelectedElements = new List<KMLElementWithOffset>();
+        private MultipleSelection.SelectionPart draggingMultipleSelectionPart = MultipleSelection.SelectionPart.None;
 
         private static SolidBrush brushForeground = new SolidBrush(Color.DarkGoldenrod);
         private static Pen penForeground = new Pen(brushForeground);
@@ -41,9 +42,10 @@ namespace KMLEditor
         private static Pen penForegroundSelected = new Pen(brushForegroundSelected);
         private static Pen penForegroundButtonSelected = new Pen(brushForegroundButtonSelected);
         private static Pen penForegroundButtonDownSelected = new Pen(brushForegroundSelected);
-        private static Pen penSelection = new Pen(brushSelectionColor);
+        private static Pen penRectangularSelection = new Pen(brushSelectionColor);
+        private static Pen penRectangularSelectionForResize = new Pen(brushSelectionColor);
         private Point pointSelectionStartLocation = new Point();
-        private Rectangle rectangleScaledSelection = new Rectangle();
+        private RectangleF rectangleScaledSelection = new RectangleF();
         private bool showSelectionRectangle = false;
         private bool leftMouseButtonDownPulse = false;
 
@@ -60,7 +62,7 @@ namespace KMLEditor
             scrollingControlContainer.ContentMouseUp += ScrolledControl_MouseUp;
             scrollingControlContainer.ScrolledControl.Paint += ScrolledControl_Paint;
 
-            penSelection.DashStyle = DashStyle.Dash;
+            penRectangularSelection.DashStyle = DashStyle.Dash;
             penForegroundButtonDown.DashStyle = DashStyle.Dash;
             penForegroundButtonDownSelected.DashStyle = DashStyle.Dash;
 
@@ -78,10 +80,10 @@ namespace KMLEditor
 
         private void KMLEditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            foreach (var kmlFile in kmlFileManager.GetFiles())
-                if (kmlFile.isDirty)
-                    if (MessageBox.Show("At least one file is not saved. Quit anyway?", "Exit", MessageBoxButtons.YesNo) == DialogResult.No)
-                        e.Cancel = true;
+            //foreach (var kmlFile in kmlFileManager.GetFiles())
+            //    if (kmlFile.isDirty)
+            //        if (MessageBox.Show("At least one file is not saved. Quit anyway?", "", MessageBoxButtons.YesNo) == DialogResult.No)
+            //            e.Cancel = true;
         }
 
         private void KMLEditorForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -170,7 +172,7 @@ namespace KMLEditor
 
         private void toolStripButtonUndo_Click(object sender, EventArgs e)
         {
-            List<DoOperation> doOperations = undoManager.Undo();
+            List<UndoManager.DoOperation> doOperations = undoManager.Undo();
             if(doOperations != null)
             {
                 foreach (var doOperation in doOperations)
@@ -195,7 +197,7 @@ namespace KMLEditor
 
         private void toolStripButtonRedo_Click(object sender, EventArgs e)
         {
-            List<DoOperation> doOperations = undoManager.Redo();
+            List<UndoManager.DoOperation> doOperations = undoManager.Redo();
             if (doOperations != null)
             {
                 foreach (var doOperation in doOperations)
@@ -228,7 +230,10 @@ namespace KMLEditor
                 kMLElementWithOffset.isSelected = true;
             }
             UpdateSelectedElementsList();
+            UpdatePropertyGridAndListBoxForSelectedElement();
+            UpdateRectangleWithSelectedElements();
             InvalidateDisplay();
+            UpdateKMLSource();
         }
 
 
@@ -252,27 +257,58 @@ namespace KMLEditor
             Graphics graphics = e.Graphics;
 
             Point virtualPoint = scrollingControlContainer.VirtualPoint;
-            e.Graphics.TranslateTransform(-(float)virtualPoint.X, -(float)virtualPoint.Y);
+            e.Graphics.TranslateTransform(-virtualPoint.X, -virtualPoint.Y);
             e.Graphics.ScaleTransform(zoom, zoom);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.SmoothingMode = SmoothingMode.None;
             e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             if(zoom > 1.0f)
             {
                 e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                e.Graphics.PixelOffsetMode = PixelOffsetMode.None;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             }
 
             if (bitmap != null)
                 graphics.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
 
+            float zoomInverse = 1.0f / zoom;
+            penForeground.Width = zoomInverse;
+            penForegroundButtonDown.Width = zoomInverse;
+            Pen pen = penForeground;
+            foreach (var element in kmlFileManager.GetElementsWithOffsetAndSize())
+            {
+                RectangleF rectangle = element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom);
+                if (element is KMLLcd)
+                {
+                    graphics.DrawLine(pen, rectangle.Left, rectangle.Top, rectangle.Right, rectangle.Top);
+                    graphics.DrawLine(pen, rectangle.Left, rectangle.Top, rectangle.Left, rectangle.Bottom);
+                }
+                else
+                    graphics.DrawRectangle(pen, rectangle);
+
+                if (element is KMLElementWithOffsetAndSizeAndDown)
+                {
+                    KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)element;
+                    if (kmlElementWithOffsetAndSizeAndDown.DownX != null && kmlElementWithOffsetAndSizeAndDown.DownY != null)
+                        graphics.DrawRectangle(penForegroundButtonDown, new RectangleF((int)kmlElementWithOffsetAndSizeAndDown.DownX, (int)kmlElementWithOffsetAndSizeAndDown.DownY,
+                                kmlElementWithOffsetAndSizeAndDown.SizeWidth, kmlElementWithOffsetAndSizeAndDown.SizeHeight));
+                }
+            }
+
+            // Display selected elements above.
+            penForegroundButtonSelected.Width = zoomInverse;
+            penForegroundSelected.Width = zoomInverse;
+            penForegroundButtonDownSelected.Width = zoomInverse;
+            pen = penForegroundSelected;
             KMLElementWithOffset lastSelectedElement = GetLastSelectedElement();
             foreach (var element in kmlFileManager.GetElementsWithOffsetAndSize())
             {
-                Pen pen = element.isSelected? penForegroundSelected : penForeground;
-                Rectangle rectangle = element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element);
+                if (!element.isSelected)
+                    continue;
+
+                RectangleF rectangle = element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom);
                 if (element == lastSelectedElement)
                 {
-                    if(element is KMLLcd)
+                    if (element is KMLLcd)
                     {
                         graphics.DrawLine(penForegroundButtonSelected, rectangle.Left, rectangle.Top, rectangle.Right, rectangle.Top);
                         graphics.DrawLine(penForegroundButtonSelected, rectangle.Left, rectangle.Top, rectangle.Left, rectangle.Bottom);
@@ -280,18 +316,18 @@ namespace KMLEditor
                     else
                     {
                         graphics.DrawRectangle(penForegroundButtonSelected, rectangle);
-                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.TopLeft));
-                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.TopRight));
-                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.BottomRight));
-                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.BottomLeft));
+                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.TopLeft, zoom));
+                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.TopRight, zoom));
+                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.BottomRight, zoom));
+                        graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.BottomLeft, zoom));
                         if (element is KMLElementWithOffsetAndSizeAndDown)
                         {
                             KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)element;
                             if (kmlElementWithOffsetAndSizeAndDown.DownX != null && kmlElementWithOffsetAndSizeAndDown.DownY != null)
-                                graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.InsideDown));
+                                graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.InsideDown, zoom));
                         }
                     }
-                    graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Inside));
+                    graphics.DrawRectangle(penForegroundButtonSelected, element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Inside, zoom));
                 }
                 else if (element is KMLLcd)
                 {
@@ -305,14 +341,31 @@ namespace KMLEditor
                 {
                     KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)element;
                     if (kmlElementWithOffsetAndSizeAndDown.DownX != null && kmlElementWithOffsetAndSizeAndDown.DownY != null)
-                        graphics.DrawRectangle(element.isSelected ? penForegroundButtonDownSelected : penForegroundButtonDown,
-                            new Rectangle((int)kmlElementWithOffsetAndSizeAndDown.DownX, (int)kmlElementWithOffsetAndSizeAndDown.DownY, kmlElementWithOffsetAndSizeAndDown.SizeWidth, kmlElementWithOffsetAndSizeAndDown.SizeHeight));
+                        graphics.DrawRectangle(penForegroundButtonDownSelected, new RectangleF((int)kmlElementWithOffsetAndSizeAndDown.DownX, (int)kmlElementWithOffsetAndSizeAndDown.DownY,
+                                    kmlElementWithOffsetAndSizeAndDown.SizeWidth, kmlElementWithOffsetAndSizeAndDown.SizeHeight));
                 }
             }
 
-            if(showSelectionRectangle)
-                graphics.DrawRectangle(penSelection, rectangleScaledSelection);
+            if (selectedElements.Count > 1 && multipleSelection.rectangle.Width > 0f && multipleSelection.rectangle.Height > 0f)
+            {
+                penRectangularSelectionForResize.Width = zoomInverse;
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.TopLeft, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.Top, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.TopRight, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.Right, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.BottomRight, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.Bottom, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.BottomLeft, zoom));
+                graphics.DrawRectangle(penRectangularSelectionForResize, multipleSelection.GetBoundForPart(MultipleSelection.SelectionPart.Left, zoom));
+            }
+
+            if (showSelectionRectangle)
+            {
+                penRectangularSelection.Width = zoomInverse;
+                graphics.DrawRectangle(penRectangularSelection, rectangleScaledSelection);
+            }
         }
+
 
         private bool ScrolledControl_MouseWheel(object sender, MouseEventArgs e)
         {
@@ -360,18 +413,13 @@ namespace KMLEditor
 
             toolStripStatusLabelCoordinates.Text = string.Format("{0},{1}", location.X, location.Y);
 
-            KMLElementWithOffset resultElement;
-            kmlFileManager.HitTest(location, out resultElement, !toolStripButtonAllowBackgroundSelection.Checked);
-            if (resultElement != null && !selectedElements.Contains(resultElement))
-            {
-            }
-            else if (selectedElements.Count > 0)
+            if (selectedElements.Count > 0)
             {
                 // Start the pan or resize of the selected elements (starting from the last selectedElement)
                 KMLElementWithOffset lastSelectedElement = GetLastSelectedElement();
                 if (lastSelectedElement != null)
                 {
-                    KMLElementWithOffset.SelectionPart selectionPart = lastSelectedElement.HitTestForSelection(location);
+                    KMLElementWithOffset.SelectionPart selectionPart = lastSelectedElement.HitTestForSelection(location, zoom);
                     if (selectionPart != KMLElementWithOffset.SelectionPart.None)
                     {
                         draggingElement = lastSelectedElement;
@@ -380,7 +428,7 @@ namespace KMLEditor
                         draggingSelectedElements.Clear();
                         foreach (var kmlElement in selectedElements)
                         {
-                            kmlElement.BackupForDragging();
+                            kmlElement.BackupBeforeDragging();
                             // Deep copy for undo
                             KMLElementWithOffset kmlElementWithOffsetClone = kmlElement.Clone() as KMLElementWithOffset;
                             if(kmlElementWithOffsetClone != null)
@@ -390,11 +438,39 @@ namespace KMLEditor
                         return true; // Prevent default
                     }
                 }
+
+                if (selectedElements.Count > 1)
+                {
+                    // Start the resize of the multiple selected elements (rectangle containing all the selected elements)
+                    MultipleSelection.SelectionPart multipleSelectionPart = multipleSelection.HitTestForSelection(location, zoom);
+                    if (multipleSelectionPart != MultipleSelection.SelectionPart.None)
+                    {
+                        draggingMultipleSelectionPart = multipleSelectionPart;
+                        draggingStartLocation = e.Location;
+                        draggingSelectedElements.Clear();
+                        multipleSelection.BackupBeforeDragging();
+                        foreach (var kmlElement in selectedElements)
+                        {
+                            kmlElement.BackupBeforeDragging();
+                            // Deep copy for undo
+                            KMLElementWithOffset kmlElementWithOffsetClone = kmlElement.Clone() as KMLElementWithOffset;
+                            if (kmlElementWithOffsetClone != null)
+                                draggingSelectedElements.Add(kmlElementWithOffsetClone);
+                        }
+                        SetMultipleSelectionCursor(multipleSelectionPart);
+                        return true; // Prevent default
+                    }
+                }
             }
+            //KMLElementWithOffset resultElement;
+            //kmlFileManager.HitTest(location, out resultElement, !toolStripButtonAllowBackgroundSelection.Checked);
+            //if (resultElement != null && !selectedElements.Contains(resultElement))
+            //{
+            //}
             Cursor.Current = Cursors.Arrow;
             draggingElement = null;
             draggingPart = KMLElementWithOffset.SelectionPart.None;
-
+            draggingMultipleSelectionPart = MultipleSelection.SelectionPart.None;
 
             leftMouseButtonDownPulse = true;
 
@@ -427,14 +503,17 @@ namespace KMLEditor
             int deltaX = e.Location.X - pointSelectionStartLocation.X;
             int deltaY = e.Location.Y - pointSelectionStartLocation.Y;
 
+            bool isShiftPressed = (ModifierKeys & Keys.Shift) == Keys.Shift;
+            bool isControlPressed = (ModifierKeys & Keys.Control) == Keys.Control;
+
             if (showSelectionRectangle && deltaX != 0 && deltaY != 0)
             {
                 // Update the rectangular selection
-                rectangleScaledSelection = new Rectangle(
-                    (int)((pointSelectionStartLocation.X + scrollingControlContainer.VirtualPoint.X) / zoom),
-                    (int)((pointSelectionStartLocation.Y + scrollingControlContainer.VirtualPoint.Y) / zoom),
-                    (int)(deltaX / zoom),
-                    (int)(deltaY / zoom)
+                rectangleScaledSelection = new RectangleF(
+                    (pointSelectionStartLocation.X + scrollingControlContainer.VirtualPoint.X) / zoom,
+                    (pointSelectionStartLocation.Y + scrollingControlContainer.VirtualPoint.Y) / zoom,
+                    deltaX / zoom,
+                    deltaY / zoom
                 );
 
                 // If the rectangle has a negative size, make it positif
@@ -444,17 +523,18 @@ namespace KMLEditor
                     rectangleScaledSelection.Y -= rectangleScaledSelection.Height = -rectangleScaledSelection.Height;
 
                 selectedElements.Clear();
-                if ((ModifierKeys & Keys.Control) != Keys.Control)
-                    // If the control key is not pushed, we start again a new selection
-                    foreach (var kmlElement in kmlFileManager.GetElementsWithOffsetAndSize()) kmlElement.isSelected = false;
-                else
+                if (isControlPressed)
                     selectedElements.AddRange(selectedElementsBeforeRectangleSelection);
+                else
+                    // If the control key is not pushed, we start again a new selection
+                    foreach (var kmlElement in kmlFileManager.GetElementsWithOffsetAndSize())
+                        kmlElement.isSelected = false;
 
                 foreach (var element in kmlFileManager.GetElementsWithOffsetAndSize())
                 {
                     if (!toolStripButtonAllowBackgroundSelection.Checked && element is KMLBackground)
                         continue;
-                    if (rectangleScaledSelection.IntersectsWith(element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element)))
+                    if (rectangleScaledSelection.IntersectsWith(element.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom)))
                     {
                         if (selectedElements.Contains(element))
                             selectedElements.Remove(element);
@@ -462,8 +542,8 @@ namespace KMLEditor
                             selectedElements.Add(element);
                     }
                 }
-                foreach (var element in kmlFileManager.GetElementsWithOffsetAndSize())
-                    element.isSelected = selectedElements.Contains(element);
+                UpdateSelectedElements();
+                UpdateRectangleWithSelectedElements();
 
                 InvalidateDisplay();
 
@@ -474,19 +554,39 @@ namespace KMLEditor
                 // Pan or resize the selected elements
                 Point draggingDelta = new Point((int)((e.Location.X - draggingStartLocation.X) / zoom), (int)((e.Location.Y - draggingStartLocation.Y) / zoom));
                 foreach (var kmlElement in selectedElements)
-                    kmlElement.UpdateForDragging(draggingDelta, draggingPart, (ModifierKeys & Keys.Shift) == Keys.Shift, toolStripButtonAllowMoveDownPart.Checked); // (KMLElementWithOffset.MovePart)toolStripComboBoxDownPart.SelectedIndex);
-                InvalidateDisplay();
+                    kmlElement.ModifyRectangle(draggingDelta, draggingPart, isShiftPressed, isControlPressed, toolStripButtonAllowMoveDownPart.Checked);
+
+                UpdateRectangleWithSelectedElements();
                 UpdatePropertyGridForSelectedElement();
+                InvalidateDisplay();
+
+                toolStripStatusLabelCoordinates.Text = string.Format("{0},{1} Delta:{2}x{3}", draggingElement.OffsetX, draggingElement.OffsetY, draggingDelta.X, draggingDelta.Y);
+            }
+            else if (draggingMultipleSelectionPart != MultipleSelection.SelectionPart.None)
+            {
+                // Resize a multiple selected elements at once (rectangle containing all the selected elements)
+                PointF draggingDelta = new PointF((e.Location.X - draggingStartLocation.X) / zoom, (e.Location.Y - draggingStartLocation.Y) / zoom);
+                RectangleF newRectangle = multipleSelection.ModifyRectangle(draggingDelta, draggingMultipleSelectionPart, isShiftPressed, isControlPressed);
+                foreach (var kmlElement in selectedElements)
+                    kmlElement.Resize(multipleSelection.dragRectangle, newRectangle, toolStripButtonAllowMoveDownPart.Checked);
+                UpdateRectangleWithSelectedElements();
+                UpdatePropertyGridForSelectedElement();
+                InvalidateDisplay();
+
+                toolStripStatusLabelCoordinates.Text = string.Format("{0},{1} {2}x{3} Delta:{4}x{5} Delta:{6}%x{7}%",
+                    (int)newRectangle.X, (int)newRectangle.Y, (int)newRectangle.Width, (int)newRectangle.Height,
+                    (int)draggingDelta.X, (int)draggingDelta.Y,
+                    (int)(newRectangle.Width / multipleSelection.dragRectangle.Width * 100f), (int)(newRectangle.Height / multipleSelection.dragRectangle.Height * 100f));
             }
             else if (selectedElements.Count > 0)
             {
                 // Change the cursor appearence following the KML element 
+                bool cursorChanged = false;
                 KMLElementWithOffset lastSelectedElement = GetLastSelectedElement();
                 if (lastSelectedElement != null)
-                {
-                    KMLElementWithOffset.SelectionPart selectionPart = lastSelectedElement.HitTestForSelection(location);
-                    SetSelectionCursor(selectionPart);
-                }
+                    cursorChanged = SetSelectionCursor(lastSelectedElement.HitTestForSelection(location, zoom));
+                if(!cursorChanged)
+                    SetMultipleSelectionCursor(multipleSelection.HitTestForSelection(location, zoom));
             }
             else
                 Cursor.Current = Cursors.Arrow;
@@ -511,31 +611,36 @@ namespace KMLEditor
                 if (lastSelectedElement != null)
                     SelectSourceCodeFromKMLElement(lastSelectedElement);
                 UpdatePropertyGridAndListBoxForSelectedElement();
+                UpdateRectangleWithSelectedElements();
                 InvalidateDisplay();
             }
-            else if (draggingElement != null && (ModifierKeys & Keys.Control) != Keys.Control)
+            else if ((draggingElement != null && (ModifierKeys & Keys.Control) != Keys.Control)
+                || draggingMultipleSelectionPart != MultipleSelection.SelectionPart.None)
             {
                 // End modifying a KML element
                 if (draggingSelectedElements.Count > 0)
                 {
-                    List<DoOperation> operations = new List<DoOperation>();
+                    List<UndoManager.DoOperation> operations = new List<UndoManager.DoOperation>();
                     foreach (var kmlElementWithOffset in draggingSelectedElements)
                     {
-                        operations.Add(new DoOperation
+                        operations.Add(new UndoManager.DoOperation
                         {
                             Before = kmlElementWithOffset,
                             After = kmlFileManager.GetElementWithOffsetById(kmlElementWithOffset.id).Clone(),
-                            OperationType = OperationType.PanOrResize,
+                            OperationType = UndoManager.OperationType.PanOrResize,
                             ModifiedPart = draggingPart
                         });
                     }
                     undoManager.Modify(operations);
                     UpdatePropertyGridAndListBoxForSelectedElement();
+                    UpdateRectangleWithSelectedElements();
                     UpdateUndoMenuAndToolbar();
                     UpdateKMLSource();
+                    InvalidateDisplay();
                 }
-                //    draggingElement = null;
-                //    draggingPart = KMLElementWithOffset.SelectionPart.None;
+                draggingElement = null;
+                draggingPart = KMLElementWithOffset.SelectionPart.None;
+                draggingMultipleSelectionPart = MultipleSelection.SelectionPart.None;
             }
             else
             {
@@ -578,11 +683,13 @@ namespace KMLEditor
                 }
                 SelectSourceCodeFromKMLElement(GetLastSelectedElement());
                 UpdatePropertyGridAndListBoxForSelectedElement();
+                UpdateRectangleWithSelectedElements();
                 InvalidateDisplay();
             }
 
             draggingElement = null;
             draggingPart = KMLElementWithOffset.SelectionPart.None;
+            draggingMultipleSelectionPart = MultipleSelection.SelectionPart.None;
 
             leftMouseButtonDownPulse = false;
             showSelectionRectangle = false;
@@ -593,10 +700,17 @@ namespace KMLEditor
         {
             if (preventListBoxSelectedElementEvent)
                 return;
-            foreach (var kmlElementWithOffset in kmlFileManager.GetElementsWithOffsetAndSize())
-                kmlElementWithOffset.isSelected = listBoxSelectedElement.SelectedItems.Contains(kmlElementWithOffset);
-            UpdateSelectedElementsList();
+            // Add new selected element trying to preserve the user selection order
+            foreach (var kmlElementWithOffset in listBoxSelectedElement.SelectedItems)
+                if (!selectedElements.Contains(kmlElementWithOffset) && kmlElementWithOffset is KMLElementWithOffset)
+                    selectedElements.Add((KMLElementWithOffset)kmlElementWithOffset);
+            foreach (var kmlElementWithOffset in selectedElements.ToList())
+                if (!listBoxSelectedElement.SelectedItems.Contains(kmlElementWithOffset))
+                    selectedElements.Remove(kmlElementWithOffset);
+            UpdateSelectedElements();
+            SelectSourceCodeFromKMLElement(GetLastSelectedElement());
             UpdatePropertyGridForSelectedElement();
+            UpdateRectangleWithSelectedElements();
             InvalidateDisplay();
         }
 
@@ -604,17 +718,17 @@ namespace KMLEditor
         {
             string property = e.ChangedItem.Label;
             int? oldValue = (int)e.OldValue;
-            List<DoOperation> operations = new List<DoOperation>();
+            List<UndoManager.DoOperation> operations = new List<UndoManager.DoOperation>();
             foreach (var kmlElement in propertyGridSelectedElement.SelectedObjects)
             {
                 if(kmlElement is KMLElementWithOffset)
                 {
                     KMLElementWithOffset kmlElementWithOffset = (KMLElementWithOffset)kmlElement;
-                    DoOperation operation = new DoOperation
+                    UndoManager.DoOperation operation = new UndoManager.DoOperation
                     {
                         Before = kmlElementWithOffset.Clone(),
                         After = kmlElementWithOffset.Clone(),
-                        OperationType = OperationType.PanOrResize,
+                        OperationType = UndoManager.OperationType.PanOrResize,
                         ModifiedPart = draggingPart
                     };
                     switch (property)
@@ -623,7 +737,7 @@ namespace KMLEditor
                             if(oldValue != null && kmlElement is KMLElementWithOffset)
                             {
                                 ((KMLElementWithOffset)operation.Before).OffsetX = (int)oldValue;
-                                operation.OperationType = OperationType.PanOrResize;
+                                operation.OperationType = UndoManager.OperationType.PanOrResize;
                                 operation.ModifiedPart = KMLElementWithOffset.SelectionPart.Left;
                             }
                             break;
@@ -631,7 +745,7 @@ namespace KMLEditor
                             if (oldValue != null && kmlElement is KMLElementWithOffset)
                             {
                                 ((KMLElementWithOffset)operation.Before).OffsetY = (int)oldValue;
-                                operation.OperationType = OperationType.PanOrResize;
+                                operation.OperationType = UndoManager.OperationType.PanOrResize;
                                 operation.ModifiedPart = KMLElementWithOffset.SelectionPart.Top;
                             }
                             break;
@@ -639,7 +753,7 @@ namespace KMLEditor
                             if (oldValue != null && kmlElement is KMLElementWithOffsetAndSize)
                             {
                                 ((KMLElementWithOffsetAndSize)operation.Before).SizeWidth = (int)oldValue;
-                                operation.OperationType = OperationType.PanOrResize;
+                                operation.OperationType = UndoManager.OperationType.PanOrResize;
                                 operation.ModifiedPart = KMLElementWithOffset.SelectionPart.Right;
                             }
                             break;
@@ -647,7 +761,7 @@ namespace KMLEditor
                             if (oldValue != null && kmlElement is KMLElementWithOffsetAndSize)
                             {
                                 ((KMLElementWithOffsetAndSize)operation.Before).SizeHeight = (int)oldValue;
-                                operation.OperationType = OperationType.PanOrResize;
+                                operation.OperationType = UndoManager.OperationType.PanOrResize;
                                 operation.ModifiedPart = KMLElementWithOffset.SelectionPart.Bottom;
                             }
                             break;
@@ -687,6 +801,7 @@ namespace KMLEditor
             if(operations.Count > 0)
                 undoManager.Modify(operations);
             UpdateUndoMenuAndToolbar();
+            UpdateRectangleWithSelectedElements();
             InvalidateDisplay();
             UpdateKMLSource();
         }
@@ -744,8 +859,11 @@ namespace KMLEditor
             ResumeLayout(false);
             PerformLayout();
 
-            bitmap = new Bitmap(kmlFileManager.RootBasePath + kmlFileManager.BitmapFilename);
-            scrollingControlContainer.VirtualSize = new Size((int)(bitmap.Width * zoom), (int)(bitmap.Height * zoom));
+            if(kmlFileManager.BitmapFilename != null)
+            {
+                bitmap = new Bitmap(kmlFileManager.RootBasePath + kmlFileManager.BitmapFilename);
+                scrollingControlContainer.VirtualSize = new Size((int)(bitmap.Width * zoom), (int)(bitmap.Height * zoom));
+            }
 
             InvalidateDisplay();
         }
@@ -754,6 +872,8 @@ namespace KMLEditor
         {
             kmlFileManager.Cleanup();
             zoom = 1.0f;
+            scrollingControlContainer.VirtualPoint = new Point(0, 0);
+            scrollingControlContainer.VirtualSize = new Size(10, 10);
             if (bitmap != null)
             {
                 bitmap.Dispose();
@@ -764,21 +884,44 @@ namespace KMLEditor
             tabControlKMLFiles.Controls.Clear();
             selectedElements.Clear();
             UpdatePropertyGridAndListBoxForSelectedElement();
+            UpdateRectangleWithSelectedElements();
         }
 
         private void UpdateAfterDoOperation()
         {
             UpdateSelectedElementsList();
             UpdatePropertyGridAndListBoxForSelectedElement();
+            UpdateRectangleWithSelectedElements();
             UpdateUndoMenuAndToolbar();
             InvalidateDisplay();
             UpdateKMLSource();
+        }
+
+        private void UpdateSelectedElements()
+        {
+            foreach (var element in kmlFileManager.GetElementsWithOffsetAndSize())
+                element.isSelected = selectedElements.Contains(element);
         }
 
         private void UpdateSelectedElementsList()
         {
             selectedElements.Clear();
             selectedElements.AddRange(kmlFileManager.GetElementsWithOffsetAndSize().Where(element => element.isSelected));
+        }
+
+        private void UpdateRectangleWithSelectedElements()
+        {
+            multipleSelection.rectangle = new RectangleF();
+            if(selectedElements.Count > 1)
+            {
+                multipleSelection.rectangle = selectedElements[0].GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom);
+                for (int i = 1; i < selectedElements.Count; i++)
+                {
+                    var selectedElement = selectedElements[i];
+                    multipleSelection.rectangle = RectangleF.Union(multipleSelection.rectangle, selectedElement.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom));
+                }
+                //multipleSelection.rectangle.Inflate(2f, 2f);
+            }
         }
 
         private void UpdateUndoMenuAndToolbar()
@@ -825,6 +968,15 @@ namespace KMLEditor
         {
             return selectedElements.Count > 0 ? selectedElements.Last() : null;
         }
+        private void SetLastSelectedElement(KMLElementWithOffset kmlElementWithOffset)
+        {
+            if(kmlElementWithOffset != null)
+            {
+                if (selectedElements.Contains(kmlElementWithOffset))
+                    selectedElements.Remove(kmlElementWithOffset);
+                selectedElements.Add(kmlElementWithOffset);
+            }
+        }
 
         private void SelectSourceCodeFromKMLElement(KMLElement resultElement)
         {
@@ -868,41 +1020,110 @@ namespace KMLEditor
             preventListBoxSelectedElementEvent = false;
         }
 
-        private static void SetSelectionCursor(KMLElementWithOffset.SelectionPart selectionPart)
+        private bool SetSelectionCursor(KMLElementWithOffset.SelectionPart selectionPart)
         {
+            // http://www.authorcode.com/show-all-cursors/
+            // https://www.oreilly.com/library/view/visual-basic-2012/9781118332085/xhtml/sec65.html
+            const string help = "Resize the {0} of each selected element (Shift for centering).";
             switch (selectionPart)
             {
                 case KMLElementWithOffset.SelectionPart.Inside:
+                    Cursor.Current = Cursors.SizeAll;
+                    toolStripStatusLabelHelp.Text = "Move each selected element.";
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.InsideDown:
                     Cursor.Current = Cursors.SizeAll;
-                    break;
+                    toolStripStatusLabelHelp.Text = "Move of the Down part of each selected element.";
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.TopLeft:
                     Cursor.Current = Cursors.SizeNWSE;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top/left");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.Top:
                     Cursor.Current = Cursors.SizeNS;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.TopRight:
                     Cursor.Current = Cursors.SizeNESW;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top/right");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.Right:
                     Cursor.Current = Cursors.SizeWE;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "right");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.BottomRight:
                     Cursor.Current = Cursors.SizeNWSE;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom/right");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.Bottom:
                     Cursor.Current = Cursors.SizeNS;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.BottomLeft:
                     Cursor.Current = Cursors.SizeNESW;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom/left");
+                    return true;
+
                 case KMLElementWithOffset.SelectionPart.Left:
                     Cursor.Current = Cursors.SizeWE;
-                    break;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "left");
+                    return true;
+
                 default:
                     Cursor.Current = Cursors.Arrow;
-                    break;
+                    toolStripStatusLabelHelp.Text = "";
+                    return false;
+            }
+        }
+        private bool SetMultipleSelectionCursor(MultipleSelection.SelectionPart multipleSelectionPart)
+        {
+            const string help = "Uniform resize of the {0} of all the elements (Shift for centering, Ctrl to keep the ratio).";
+            switch (multipleSelectionPart)
+            {
+                case MultipleSelection.SelectionPart.TopLeft:
+                    Cursor.Current = Cursors.PanNW;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top/left");
+                    return true;
+                case MultipleSelection.SelectionPart.Top:
+                    Cursor.Current = Cursors.PanNorth;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top");
+                    return true;
+                case MultipleSelection.SelectionPart.TopRight:
+                    Cursor.Current = Cursors.PanNE;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "top/right");
+                    return true;
+                case MultipleSelection.SelectionPart.Right:
+                    Cursor.Current = Cursors.PanEast;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "right");
+                    return true;
+                case MultipleSelection.SelectionPart.BottomRight:
+                    Cursor.Current = Cursors.PanSE;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom/right");
+                    return true;
+                case MultipleSelection.SelectionPart.Bottom:
+                    Cursor.Current = Cursors.PanSouth;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom");
+                    return true;
+                case MultipleSelection.SelectionPart.BottomLeft:
+                    Cursor.Current = Cursors.PanSW;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "bottom/left");
+                    return true;
+                case MultipleSelection.SelectionPart.Left:
+                    Cursor.Current = Cursors.PanWest;
+                    toolStripStatusLabelHelp.Text = string.Format(help, "left");
+                    return true;
+                default:
+                    Cursor.Current = Cursors.Arrow;
+                    toolStripStatusLabelHelp.Text = "";
+                    return false;
             }
         }
 

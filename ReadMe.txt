@@ -36,8 +36,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-TODO:
-* Display true moving coords.
+TODO
+
+* Display resizing coords not updated when zoom out.
+
 * Allow to add and remove an element.
 * Allow copy/paste.
 * Warning on issues (duplicate button or annonciator, multiple display or digit, or other...).

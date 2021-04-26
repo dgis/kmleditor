@@ -53,6 +53,7 @@
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
     <Compile Include="KMLElement.cs" />
+    <Compile Include="MultipleSelection.cs" />
     <Compile Include="ScrolledControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

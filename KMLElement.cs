@@ -1,12 +1,14 @@
-﻿using System.Drawing;
+﻿using System;
+using System.ComponentModel;
+using System.Drawing;
 
 namespace KMLEditor
 {
     public class KMLElement
     {
-        public const int selectionMargin = 3;
-        public const int insideSelectionMargin = 4;
-        public const int minimumSize = 2;
+        public const int selectionBorderMargin = 3;
+        public const int selectionInsideMargin = 4;
+        public const int minimumSizeWhenResizing = 1;
 
         private static int lastId = -1;
 
@@ -42,22 +44,25 @@ namespace KMLEditor
 
     public class KMLElementWithOffset : KMLElement
     {
-        protected Rectangle rectangle;
-        protected Rectangle dragRectangle;
-        protected int? downX = null;
-        protected int? downY = null;
-        protected int? dragDownX = null;
-        protected int? dragDownY = null;
+        protected RectangleF rectangle;
+        protected RectangleF dragRectangle;
+        protected float? downX = null;
+        protected float? downY = null;
+        protected float? dragDownX = null;
+        protected float? dragDownY = null;
 
-        public int OffsetX { get => rectangle.X; set { if (rectangle.X != value) { rectangle.X = value; isDirty = true; } } }
-        public int OffsetY { get => rectangle.Y; set { if (rectangle.Y != value) { rectangle.Y = value; isDirty = true; } } }
+        [Description(@"Offset sets the position of the element.")]
+        public int OffsetX { get => (int)rectangle.X; set { if (rectangle.X != value) { rectangle.X = value; isDirty = true; } } }
+        [Description(@"Offset sets the position of the element.")]
+        public int OffsetY { get => (int)rectangle.Y; set { if (rectangle.Y != value) { rectangle.Y = value; isDirty = true; } } }
         public int offsetLineNumber = -1;
 
 
 
         public bool HitTest(Point location)
         {
-            if (new Rectangle(OffsetX, OffsetY, rectangle.Width, rectangle.Height).Contains(location))
+            if (new RectangleF(OffsetX, OffsetY, rectangle.Width, rectangle.Height).Contains(location)
+                || (downX != null && downY != null && new RectangleF((float)downX, (float)downY, rectangle.Width, rectangle.Height).Contains(location)))
                 return true;
             return false;
         }
@@ -75,7 +80,8 @@ namespace KMLEditor
             Left,
             Inside,
             InsideDown,
-            Element
+            Element,
+            DownElement
         }
 
         protected virtual bool AllowPart(SelectionPart part)
@@ -83,76 +89,98 @@ namespace KMLEditor
             return true;
         }
 
-        public SelectionPart HitTestForSelection(Point location)
+        public SelectionPart HitTestForSelection(PointF location, float zoom)
         {
-            if (GetBoundForPart(SelectionPart.Inside).Contains(location))
+            if (GetBoundForPart(SelectionPart.Inside, zoom).Contains(location))
                 return SelectionPart.Inside;
-            else if (GetBoundForPart(SelectionPart.InsideDown).Contains(location))
+            else if (GetBoundForPart(SelectionPart.InsideDown, zoom).Contains(location))
                 return SelectionPart.InsideDown;
-            else if (GetBoundForPart(SelectionPart.TopLeft).Contains(location))
+            else if (GetBoundForPart(SelectionPart.TopLeft, zoom).Contains(location))
                 return SelectionPart.TopLeft;
-            else if (GetBoundForPart(SelectionPart.Top).Contains(location))
+            else if (GetBoundForPart(SelectionPart.Top, zoom).Contains(location))
                 return SelectionPart.Top;
-            else if (GetBoundForPart(SelectionPart.TopRight).Contains(location))
+            else if (GetBoundForPart(SelectionPart.TopRight, zoom).Contains(location))
                 return SelectionPart.TopRight;
-            else if (GetBoundForPart(SelectionPart.Right).Contains(location))
+            else if (GetBoundForPart(SelectionPart.Right, zoom).Contains(location))
                 return SelectionPart.Right;
-            else if (GetBoundForPart(SelectionPart.BottomRight).Contains(location))
+            else if (GetBoundForPart(SelectionPart.BottomRight, zoom).Contains(location))
                 return SelectionPart.BottomRight;
-            else if (GetBoundForPart(SelectionPart.Bottom).Contains(location))
+            else if (GetBoundForPart(SelectionPart.Bottom, zoom).Contains(location))
                 return SelectionPart.Bottom;
-            else if (GetBoundForPart(SelectionPart.BottomLeft).Contains(location))
+            else if (GetBoundForPart(SelectionPart.BottomLeft, zoom).Contains(location))
                 return SelectionPart.BottomLeft;
-            else if (GetBoundForPart(SelectionPart.Left).Contains(location))
+            else if (GetBoundForPart(SelectionPart.Left, zoom).Contains(location))
                 return SelectionPart.Left;
             return SelectionPart.None;
         }
 
-        public Rectangle GetBoundForPart(SelectionPart part)
+        public RectangleF GetBoundForPart(SelectionPart part, float zoom)
         {
             if (AllowPart(part))
             {
+                float selectionMarginF = Math.Max(1, selectionBorderMargin / zoom);
+                float insideSelectionMarginF = Math.Max(1, selectionInsideMargin / zoom);
                 switch (part)
                 {
                     case SelectionPart.Element:
-                        return rectangle;
+                        return new RectangleF((int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height);
                     case SelectionPart.Inside:
-                        return new Rectangle(OffsetX + selectionMargin + 1, OffsetY + selectionMargin + 1, 2 * insideSelectionMargin, 2 * insideSelectionMargin);
+                        return new RectangleF(OffsetX + selectionMarginF + 1, OffsetY + selectionMarginF + 1, 2 * insideSelectionMarginF, 2 * insideSelectionMarginF);
+                    case SelectionPart.DownElement:
+                        if (downX != null && downY != null)
+                            return new RectangleF((float)downX, (float)downY, rectangle.Width, 2 * rectangle.Height);
+                        break;
                     case SelectionPart.InsideDown:
-                        if(downX != null && downY != null)
-                            return new Rectangle((int)downX + rectangle.Width - selectionMargin - 1 - 2 * insideSelectionMargin, (int)downY + rectangle.Height - selectionMargin - 1 - 2 * insideSelectionMargin, 2 * insideSelectionMargin, 2 * insideSelectionMargin);
+                        if (downX != null && downY != null)
+                            return new RectangleF((float)(downX) + rectangle.Width - selectionMarginF - 1 - 2 * insideSelectionMarginF, (float)downY + rectangle.Height - selectionMarginF - 1 - 2 * insideSelectionMarginF, 2 * insideSelectionMarginF, 2 * insideSelectionMarginF);
                         break;
                     case SelectionPart.TopLeft:
-                        return new Rectangle(OffsetX - selectionMargin, OffsetY - selectionMargin, 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX - selectionMarginF, OffsetY - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Top:
-                        return new Rectangle(OffsetX + selectionMargin, OffsetY - selectionMargin, rectangle.Width - 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX + selectionMarginF, OffsetY - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.TopRight:
-                        return new Rectangle(OffsetX + rectangle.Width - selectionMargin, OffsetY - selectionMargin, 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Right:
-                        return new Rectangle(OffsetX + rectangle.Width - selectionMargin, OffsetY + selectionMargin, 2 * selectionMargin, rectangle.Height - 2 * selectionMargin);
+                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
                     case SelectionPart.BottomRight:
-                        return new Rectangle(OffsetX + rectangle.Width - selectionMargin, OffsetY + rectangle.Height - selectionMargin, 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Bottom:
-                        return new Rectangle(OffsetX + selectionMargin, OffsetY + rectangle.Height - selectionMargin, rectangle.Width - 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX + selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.BottomLeft:
-                        return new Rectangle(OffsetX - selectionMargin, OffsetY + rectangle.Height - selectionMargin, 2 * selectionMargin, 2 * selectionMargin);
+                        return new RectangleF(OffsetX - selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Left:
-                        return new Rectangle(OffsetX - selectionMargin, OffsetY + selectionMargin, 2 * selectionMargin, rectangle.Height - 2 * selectionMargin);
+                        return new RectangleF(OffsetX - selectionMarginF, OffsetY + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
                 }
             }
-            return new Rectangle();
+            return new RectangleF();
         }
 
-        public void BackupForDragging()
+        public virtual void Resize(RectangleF before, RectangleF after, bool updateDown)
+        {
+            rectangle = Utils.Resize(dragRectangle, before, after);
+
+            if (updateDown && this is KMLElementWithOffsetAndSizeAndDown)
+            {
+                KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)this;
+                if (kmlElementWithOffsetAndSizeAndDown.dragDownX != null && kmlElementWithOffsetAndSizeAndDown.dragDownY != null)
+                {
+                    PointF downResized = Utils.Resize(new PointF((float)kmlElementWithOffsetAndSizeAndDown.dragDownX, (float)kmlElementWithOffsetAndSizeAndDown.dragDownY), before, after);
+                    kmlElementWithOffsetAndSizeAndDown.downX = downResized.X;
+                    kmlElementWithOffsetAndSizeAndDown.downY = downResized.Y;
+                }
+            }
+        }
+
+        public void BackupBeforeDragging()
         {
             dragRectangle = rectangle;
             dragDownX = downX;
             dragDownY = downY;
         }
 
-        public void UpdateForDragging(Point draggingDelta, SelectionPart draggingPart, bool isShiftPressed, bool updateDown)
+        public void ModifyRectangle(Point draggingDelta, SelectionPart draggingPart, bool isCentered, bool keepRatio, bool updateDown)
         {
-            Rectangle rectangleNew = rectangle;
+            RectangleF rectangleNew = rectangle;
             switch (draggingPart)
             {
                 case SelectionPart.Inside:
@@ -169,7 +197,7 @@ namespace KMLEditor
                 case SelectionPart.TopLeft:
                     rectangleNew.X = dragRectangle.X + draggingDelta.X;
                     rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
                         rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
@@ -182,14 +210,14 @@ namespace KMLEditor
                     break;
                 case SelectionPart.Top:
                     rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isShiftPressed)
+                    if (isCentered)
                         rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
                     else
                         rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
                     break;
                 case SelectionPart.TopRight:
                     rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.X = dragRectangle.X - draggingDelta.X;
                         rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
@@ -202,7 +230,7 @@ namespace KMLEditor
                     }
                     break;
                 case SelectionPart.Right:
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.X = dragRectangle.X - draggingDelta.X;
                         rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
@@ -211,7 +239,7 @@ namespace KMLEditor
                         rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
                     break;
                 case SelectionPart.BottomRight:
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.X = dragRectangle.X - draggingDelta.X;
                         rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
@@ -225,7 +253,7 @@ namespace KMLEditor
                     }
                     break;
                 case SelectionPart.Bottom:
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
                         rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
@@ -235,7 +263,7 @@ namespace KMLEditor
                     break;
                 case SelectionPart.BottomLeft:
                     rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    if (isShiftPressed)
+                    if (isCentered)
                     {
                         rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
                         rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
@@ -249,24 +277,24 @@ namespace KMLEditor
                     break;
                 case SelectionPart.Left:
                     rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    if (isShiftPressed)
+                    if (isCentered)
                         rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
                     else
                         rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
                     break;
             }
-            if (rectangleNew.Width < minimumSize)
-                rectangleNew.Width = minimumSize;
-            if (rectangleNew.Height < minimumSize)
-                rectangleNew.Height = minimumSize;
+            if (rectangleNew.Width < minimumSizeWhenResizing)
+                rectangleNew.Width = minimumSizeWhenResizing;
+            if (rectangleNew.Height < minimumSizeWhenResizing)
+                rectangleNew.Height = minimumSizeWhenResizing;
 
             if (this is KMLElementWithOffsetAndSizeAndDown)
             {
                 KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)this;
-                if (updateDown)
+                if (updateDown && kmlElementWithOffsetAndSizeAndDown.downX != null && kmlElementWithOffsetAndSizeAndDown.downY != null)
                 {
-                    kmlElementWithOffsetAndSizeAndDown.DownX += rectangleNew.X - rectangle.X;
-                    kmlElementWithOffsetAndSizeAndDown.DownY += rectangleNew.Y - rectangle.Y;
+                    kmlElementWithOffsetAndSizeAndDown.downX += rectangleNew.X - rectangle.X;
+                    kmlElementWithOffsetAndSizeAndDown.downY += rectangleNew.Y - rectangle.Y;
                 }
             }
             rectangle = rectangleNew;
@@ -292,8 +320,10 @@ namespace KMLEditor
 
     public class KMLElementWithOffsetAndSize : KMLElementWithOffset
     {
-        public int SizeWidth { get => rectangle.Width; set { if (rectangle.Width != value) { rectangle.Width = value; isDirty = true; } } }
-        public int SizeHeight { get => rectangle.Height; set { if (rectangle.Height != value) { rectangle.Height = value; isDirty = true; } } }
+        [Description(@"Size sets the size of the element.")]
+        public int SizeWidth { get => (int)rectangle.Width; set { if (rectangle.Width != value) { rectangle.Width = value; isDirty = true; } } }
+        [Description(@"Size sets the size of the element.")]
+        public int SizeHeight { get => (int)rectangle.Height; set { if (rectangle.Height != value) { rectangle.Height = value; isDirty = true; } } }
         public int sizeLineNumber = -1;
 
         public override KMLElement CopyFrom(KMLElement from)
@@ -330,6 +360,11 @@ namespace KMLEditor
         {
             return part == SelectionPart.Inside || part == SelectionPart.Element;
         }
+
+        public override void Resize(RectangleF before, RectangleF after, bool updateDown)
+        {
+            rectangle.Location = Utils.Resize(dragRectangle.Location, before, after);
+        }
     }
 
     public class KMLDigit : KMLElementWithOffsetAndSize
@@ -339,8 +374,12 @@ namespace KMLEditor
 
     public class KMLElementWithOffsetAndSizeAndDown : KMLElementWithOffsetAndSize
     {
-        public int? DownX { get => downX; set { if (downX != value) { downX = value; isDirty = true; } } }
-        public int? DownY { get => downY; set { if (downY != value) { downY = value; isDirty = true; } } }
+        [Description(@"For Annonciator, Down is the position of the annunciator in the bitmap when it is on.
+For Button, Down sets the picture of the down button. This is only needed if type 0 is set. Pixels right and pixels down.")]
+        public int? DownX { get => (int?)downX; set { if (downX != value) { downX = value; isDirty = true; } } }
+        [Description(@"For Annonciator, Down is the position of the annunciator in the bitmap when it is on.
+For Button, Down sets the picture of the down button. This is only needed if type 0 is set. Pixels right and pixels down.")]
+        public int? DownY { get => (int?)downY; set { if (downY != value) { downY = value; isDirty = true; } } }
         public int downLineNumber = -1;
 
         public override KMLElement CopyFrom(KMLElement from)
@@ -371,6 +410,7 @@ namespace KMLEditor
 
 
         private int number;
+        [Description(@"Annunciator tells which annunciator you are setting. Valid entries are emulator depending and can vary from 1 through 6, 7, 23, 32 or 60. The annunciator symbol itself depends on the specific LCD of the calculator. Refer to existing KML scripts for getting the symbol of each annunciator.")]
         public int Number { get => number; set { if (number != value) { number = value; isDirty = true; } } }
 
         public override KMLElement CopyFrom(KMLElement from)
@@ -398,9 +438,17 @@ namespace KMLEditor
         }
 
         private int number;
+        [Description(@"Button tells the number of the button you are creating. This can be any number. Most times the number is chosen representing the row and column number of the button. Any number can be used, but only 256 buttons can be declared. If more buttons are declared, only the first 256 will be used, and the others will be ignored.")]
         public int Number { get => number; set { if (number != value) { number = value; isDirty = true; } } }
 
         private int type;
+        [Description(@"Type tells how the button will behave when it is pressed. Valid entries are 0, 1, 2, 3, 4, or 5.
+Type 0 (default) is copying a part of the background bitmap with the dimension Size from the source position Down to the target position Offset.
+Type 1 is copying an inner part of the background bitmap with the dimension Size from the source position Offset to the target position Offset one pixel right down. The resulting button gets a new black and white border. This is a default button effect for special designed background bitmaps.
+Type 2 does nothing.
+Type 3 is drawing a part of the background bitmap with the dimension Size at the target position Offset with inverted colors. This type can be used for a button inside the LCD screen area. The effect on the LCD screen depends on the emulator.
+Type 4 is copying a part of the background bitmap with the dimension Size from the source position Offset to the target position Offset showing the background bitmap behind the LCD screen while the key pressed. This type is only useful in Emu48 with disabled option ""Enable Virtual LCD Delay"". On all other emulators this type isn’t working.
+Type 5 is drawing a transparent circle inside the rectangle given by Size into the middle of the button area given by target position Offset and the dimension Size.")]
         public int Type { get => type; set { if (type != value) { type = value; isDirty = true; } } }
         public int typeLineNumber = -1;
 
