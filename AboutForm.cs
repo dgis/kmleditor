@@ -1,5 +1,5 @@
-//    KMLEditor - A XML Schema Definition file viewer
-//    Copyright (C) 2006-2011  Regis COSNIER
+//    KMLEditor - A small KML files editor to edit the skins for the emulators like Emu48.
+//    Copyright (C) 2021 Regis COSNIER
 //
 //    This program is free software; you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by

@@ -1,6 +1,8 @@
-﻿DESCRIPTION
+﻿A small KML files editor to edit the skins for the emulators like Emu48.
 
-KML Editor is a small editor to edit the KML files (skins/faceplates) for the emulators Emu48 (Emu28, Emu42, Emu71).
+DESCRIPTION
+
+KML Editor is a small editor to edit the KML files (skins/faceplates) for the emulators Emu48 (Emu28, Emu42, Emu71, etc...).
 It is focus on the edition of the graphical elements.
 
 Features:

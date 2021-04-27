@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("KMLEditor")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("KML Editor")]
+[assembly: AssemblyDescription("A small KML files editor to edit the skins for the emulators like Emu48.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("KMLEditor")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyProduct("KML Editor")]
+[assembly: AssemblyCopyright("Copyright © 2021 Regis COSNIER")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
