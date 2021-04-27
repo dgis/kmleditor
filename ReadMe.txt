@@ -38,7 +38,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 TODO
 
-* Display resizing coords not updated when zoom out.
+* Center the canvas.
 
 * Allow to add and remove an element.
 * Allow copy/paste.

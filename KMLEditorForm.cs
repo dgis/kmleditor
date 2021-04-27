@@ -80,10 +80,13 @@ namespace KMLEditor
 
         private void KMLEditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            //foreach (var kmlFile in kmlFileManager.GetFiles())
-            //    if (kmlFile.isDirty)
-            //        if (MessageBox.Show("At least one file is not saved. Quit anyway?", "", MessageBoxButtons.YesNo) == DialogResult.No)
-            //            e.Cancel = true;
+#if DEBUG
+            return;
+#endif
+            foreach (var kmlFile in kmlFileManager.GetFiles())
+                if (kmlFile.isDirty)
+                    if (MessageBox.Show("At least one file is not saved. Quit anyway?", "", MessageBoxButtons.YesNo) == DialogResult.No)
+                        e.Cancel = true;
         }
 
         private void KMLEditorForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -614,7 +617,7 @@ namespace KMLEditor
                 UpdateRectangleWithSelectedElements();
                 InvalidateDisplay();
             }
-            else if ((draggingElement != null && (ModifierKeys & Keys.Control) != Keys.Control)
+            else if ((draggingElement != null)
                 || draggingMultipleSelectionPart != MultipleSelection.SelectionPart.None)
             {
                 // End modifying a KML element
@@ -920,7 +923,6 @@ namespace KMLEditor
                     var selectedElement = selectedElements[i];
                     multipleSelection.rectangle = RectangleF.Union(multipleSelection.rectangle, selectedElement.GetBoundForPart(KMLElementWithOffset.SelectionPart.Element, zoom));
                 }
-                //multipleSelection.rectangle.Inflate(2f, 2f);
             }
         }
 
@@ -1024,7 +1026,7 @@ namespace KMLEditor
         {
             // http://www.authorcode.com/show-all-cursors/
             // https://www.oreilly.com/library/view/visual-basic-2012/9781118332085/xhtml/sec65.html
-            const string help = "Resize the {0} of each selected element (Shift for centering).";
+            const string help = "Resize the {0} of each element selected (Shift for centering, Ctrl to keep the ratio).";
             switch (selectionPart)
             {
                 case KMLElementWithOffset.SelectionPart.Inside:
@@ -1034,7 +1036,7 @@ namespace KMLEditor
 
                 case KMLElementWithOffset.SelectionPart.InsideDown:
                     Cursor.Current = Cursors.SizeAll;
-                    toolStripStatusLabelHelp.Text = "Move of the Down part of each selected element.";
+                    toolStripStatusLabelHelp.Text = "Move of the Down part of each element selected.";
                     return true;
 
                 case KMLElementWithOffset.SelectionPart.TopLeft:

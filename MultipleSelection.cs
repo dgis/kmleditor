@@ -6,7 +6,7 @@ namespace KMLEditor
     class MultipleSelection
     {
         private const int selectionBorderMargin = 3;
-        private const int selectionBorderSize = 5;
+        private const int selectionBorderSize = 6;
 
         public RectangleF rectangle;
         public RectangleF dragRectangle;
@@ -76,75 +76,57 @@ namespace KMLEditor
 
         public RectangleF ModifyRectangle(PointF draggingDelta, SelectionPart draggingMultipleSelectionPart, bool isCentered, bool keepRatio)
         {
-            RectangleF newRectangle = dragRectangle;
+            float ratio = dragRectangle.Width != 0f ? dragRectangle.Height / dragRectangle.Width : 1f;
+            RectangleF newRectangle = new RectangleF();
             switch (draggingMultipleSelectionPart)
             {
                 case MultipleSelection.SelectionPart.TopLeft:
-                    newRectangle.X += draggingDelta.X;
-                    newRectangle.Y += keepRatio ? draggingDelta.X : draggingDelta.Y;
-                    newRectangle.Width -= (isCentered ? 2f : 1f) * draggingDelta.X;
-                    newRectangle.Height -= (isCentered ? 2f : 1f) * (keepRatio ? draggingDelta.X : draggingDelta.Y);
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case MultipleSelection.SelectionPart.Top:
-                    if (keepRatio)
-                    {
-                        newRectangle.X += 0.5f * draggingDelta.Y;
-                        newRectangle.Width -= (isCentered ? 2f : 1f) * draggingDelta.Y;
-                    }
-                    newRectangle.Y += draggingDelta.Y;
-                    newRectangle.Height -= (isCentered ? 2f : 1f) * draggingDelta.Y;
+                    newRectangle.X = dragRectangle.X + (keepRatio ? (isCentered ? 1f : 0.5f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Y = dragRectangle.Y + draggingDelta.Y;
+                    newRectangle.Width = dragRectangle.Width - (keepRatio ? (isCentered ? 2f : 1f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * draggingDelta.Y;
                     break;
                 case MultipleSelection.SelectionPart.TopRight:
-                    if(isCentered)
-                        newRectangle.X -= draggingDelta.X;
-                    newRectangle.Y += keepRatio ? -draggingDelta.X : draggingDelta.Y;
-                    newRectangle.Width += (isCentered ? 2f : 1f) * draggingDelta.X;
-                    newRectangle.Height -= (isCentered ? 2f : 1f) * (keepRatio ? -draggingDelta.X : draggingDelta.Y);
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case MultipleSelection.SelectionPart.Right:
-                    if (keepRatio)
-                    {
-                        newRectangle.Y -= (isCentered ? 1f : 0.5f) * draggingDelta.X;
-                        newRectangle.Height -= (isCentered ? 2f : 1f) * -draggingDelta.X;
-                    }
-                    if(isCentered)
-                        newRectangle.X -= draggingDelta.X;
-                    newRectangle.Width += (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (keepRatio ? (isCentered ? 1f : 0.5f) * ratio * draggingDelta.X : 0f);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (keepRatio ? (isCentered ? 2f : 1f) * -ratio * draggingDelta.X : 0f);
                     break;
                 case MultipleSelection.SelectionPart.BottomRight:
-                    if (isCentered)
-                    {
-                        newRectangle.X -= draggingDelta.X;
-                        newRectangle.Y -= keepRatio ? draggingDelta.X : draggingDelta.Y;
-                    }
-                    newRectangle.Width += (isCentered ? 2f : 1f) * draggingDelta.X;
-                    newRectangle.Height += (isCentered ? 2f : 1f) * (keepRatio ? draggingDelta.X : draggingDelta.Y);
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case MultipleSelection.SelectionPart.Bottom:
-                    if (keepRatio)
-                    {
-                        newRectangle.X -= draggingDelta.Y * (isCentered ? 1f : 0.5f);
-                        newRectangle.Width += (isCentered ? 2f : 1f) * draggingDelta.Y;
-                    }
-                    if (isCentered)
-                        newRectangle.Y -= draggingDelta.Y;
-                    newRectangle.Height += (isCentered ? 2f : 1f) * draggingDelta.Y;
+                    newRectangle.X = dragRectangle.X - (keepRatio ? (isCentered ? 1f : 0.5f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * draggingDelta.Y;
+                    newRectangle.Width = dragRectangle.Width + (keepRatio ? (isCentered ? 2f : 1f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * draggingDelta.Y;
                     break;
                 case MultipleSelection.SelectionPart.BottomLeft:
-                    newRectangle.X += draggingDelta.X;
-                    if (isCentered)
-                        newRectangle.Y -= (keepRatio ? -draggingDelta.X : draggingDelta.Y);
-                    newRectangle.Width -= (isCentered ? 2f : 1f) * draggingDelta.X;
-                    newRectangle.Height += (isCentered ? 2f : 1f) * (keepRatio ? -draggingDelta.X : draggingDelta.Y);
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case MultipleSelection.SelectionPart.Left:
-                    if (keepRatio)
-                    {
-                        newRectangle.Y += (isCentered ? 1f : 0.5f) * draggingDelta.X;
-                        newRectangle.Height -= (isCentered ? 2f : 1f) * draggingDelta.X;
-                    }
-                    newRectangle.X += draggingDelta.X;
-                    newRectangle.Width -= (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? (isCentered ? 1f : 0.5f) * ratio * draggingDelta.X : 0f);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (keepRatio ? (isCentered ? 2f : 1f) * ratio * draggingDelta.X : 0f);
                     break;
             }
             return newRectangle;

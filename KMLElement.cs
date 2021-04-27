@@ -180,124 +180,88 @@ namespace KMLEditor
 
         public void ModifyRectangle(Point draggingDelta, SelectionPart draggingPart, bool isCentered, bool keepRatio, bool updateDown)
         {
-            RectangleF rectangleNew = rectangle;
+            float ratio = dragRectangle.Width != 0f ? dragRectangle.Height / dragRectangle.Width : 1f;
+            RectangleF newRectangle = new RectangleF();
             switch (draggingPart)
             {
                 case SelectionPart.Inside:
-                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + draggingDelta.Y;
+                    newRectangle.Width = dragRectangle.Width;
+                    newRectangle.Height = dragRectangle.Height;
                     break;
                 case SelectionPart.InsideDown:
-                    if(downX != null && downY != null)
+                    newRectangle = rectangle;
+                    if (downX != null && downY != null)
                     {
                         downX = dragDownX + draggingDelta.X;
                         downY = dragDownY + draggingDelta.Y;
                     }
                     break;
                 case SelectionPart.TopLeft:
-                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isCentered)
-                    {
-                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
-                    }
-                    else
-                    {
-                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
-                    }
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case SelectionPart.Top:
-                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isCentered)
-                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
-                    else
-                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
+                    newRectangle.X = dragRectangle.X + (keepRatio ? (isCentered ? 1f : 0.5f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Y = dragRectangle.Y + draggingDelta.Y;
+                    newRectangle.Width = dragRectangle.Width - (keepRatio ? (isCentered ? 2f : 1f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * draggingDelta.Y;
                     break;
                 case SelectionPart.TopRight:
-                    rectangleNew.Y = dragRectangle.Y + draggingDelta.Y;
-                    if (isCentered)
-                    {
-                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
-                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height - 2 * draggingDelta.Y;
-                    }
-                    else
-                    {
-                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height - draggingDelta.Y;
-                    }
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (isCentered ? 2f : 1f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case SelectionPart.Right:
-                    if (isCentered)
-                    {
-                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
-                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
-                    }
-                    else
-                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (keepRatio ? (isCentered ? 1f : 0.5f) * ratio * draggingDelta.X : 0f);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (keepRatio ? (isCentered ? 2f : 1f) * -ratio * draggingDelta.X : 0f);
                     break;
                 case SelectionPart.BottomRight:
-                    if (isCentered)
-                    {
-                        rectangleNew.X = dragRectangle.X - draggingDelta.X;
-                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
-                        rectangleNew.Width = dragRectangle.Width + 2 * draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
-                    }
-                    else
-                    {
-                        rectangleNew.Width = dragRectangle.Width + draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
-                    }
+                    newRectangle.X = dragRectangle.X - (isCentered ? 1f : 0f) * draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width + (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * (keepRatio ? ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case SelectionPart.Bottom:
-                    if (isCentered)
-                    {
-                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
-                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
-                    }
-                    else
-                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
+                    newRectangle.X = dragRectangle.X - (keepRatio ? (isCentered ? 1f : 0.5f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * draggingDelta.Y;
+                    newRectangle.Width = dragRectangle.Width + (keepRatio ? (isCentered ? 2f : 1f) * draggingDelta.Y / ratio : 0f);
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * draggingDelta.Y;
                     break;
                 case SelectionPart.BottomLeft:
-                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    if (isCentered)
-                    {
-                        rectangleNew.Y = dragRectangle.Y - draggingDelta.Y;
-                        rectangleNew.Height = dragRectangle.Height + 2 * draggingDelta.Y;
-                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
-                    }
-                    else
-                    {
-                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
-                        rectangleNew.Height = dragRectangle.Height + draggingDelta.Y;
-                    }
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y - (isCentered ? 1f : 0f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height + (isCentered ? 2f : 1f) * (keepRatio ? -ratio * draggingDelta.X : draggingDelta.Y);
                     break;
                 case SelectionPart.Left:
-                    rectangleNew.X = dragRectangle.X + draggingDelta.X;
-                    if (isCentered)
-                        rectangleNew.Width = dragRectangle.Width - 2 * draggingDelta.X;
-                    else
-                        rectangleNew.Width = dragRectangle.Width - draggingDelta.X;
+                    newRectangle.X = dragRectangle.X + draggingDelta.X;
+                    newRectangle.Y = dragRectangle.Y + (keepRatio ? (isCentered ? 1f : 0.5f) * ratio * draggingDelta.X : 0f);
+                    newRectangle.Width = dragRectangle.Width - (isCentered ? 2f : 1f) * draggingDelta.X;
+                    newRectangle.Height = dragRectangle.Height - (keepRatio ? (isCentered ? 2f : 1f) * ratio * draggingDelta.X : 0f);
                     break;
             }
-            if (rectangleNew.Width < minimumSizeWhenResizing)
-                rectangleNew.Width = minimumSizeWhenResizing;
-            if (rectangleNew.Height < minimumSizeWhenResizing)
-                rectangleNew.Height = minimumSizeWhenResizing;
+            if (newRectangle.Width < minimumSizeWhenResizing)
+                newRectangle.Width = minimumSizeWhenResizing;
+            if (newRectangle.Height < minimumSizeWhenResizing)
+                newRectangle.Height = minimumSizeWhenResizing;
 
             if (this is KMLElementWithOffsetAndSizeAndDown)
             {
                 KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)this;
                 if (updateDown && kmlElementWithOffsetAndSizeAndDown.downX != null && kmlElementWithOffsetAndSizeAndDown.downY != null)
                 {
-                    kmlElementWithOffsetAndSizeAndDown.downX += rectangleNew.X - rectangle.X;
-                    kmlElementWithOffsetAndSizeAndDown.downY += rectangleNew.Y - rectangle.Y;
+                    kmlElementWithOffsetAndSizeAndDown.downX += newRectangle.X - rectangle.X;
+                    kmlElementWithOffsetAndSizeAndDown.downY += newRectangle.Y - rectangle.Y;
                 }
             }
-            rectangle = rectangleNew;
+            rectangle = newRectangle;
         }
 
         public override KMLElement CopyFrom(KMLElement from)
