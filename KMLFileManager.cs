@@ -57,6 +57,7 @@ namespace KMLEditor
             kmlFiles.Clear();
             kmlFilesPerFilename.Clear();
             isRootKMLFile = true;
+            kmlFileRoot = null;
             kmlElements.Clear();
             kmlElementsWithOffset.Clear();
             kmlElementsPerId.Clear();
@@ -100,7 +101,7 @@ namespace KMLEditor
 
         public bool AddKMLFile(String filename)
         {
-            KMLFile kmlFile = new KMLFile(isRootKMLFile);
+            KMLFile kmlFile = new KMLFile();
             if (isRootKMLFile)
             {
                 RootBasePath = Path.GetDirectoryName(filename) + Path.DirectorySeparatorChar;
@@ -428,52 +429,64 @@ namespace KMLEditor
                     kmlElement.kmlFile.isDirty = true;
 
                     IList<string> lines = kmlElement.kmlFile.GetLines();
-                    if (kmlElement is KMLElementWithOffsetAndSize)
+                    if (kmlElement is KMLElementWithOffset)
                     {
-                        KMLElementWithOffsetAndSize kmlElementWithOffsetAndSize = (KMLElementWithOffsetAndSize)kmlElement;
-                        if (kmlElementWithOffsetAndSize.offsetLineNumber >= 0 && kmlElementWithOffsetAndSize.offsetLineNumber < lines.Count)
+                        KMLElementWithOffset kmlElementWithOffset = (KMLElementWithOffset)kmlElement;
+                        if (kmlElementWithOffset.offsetLineNumber >= 0 && kmlElementWithOffset.offsetLineNumber < lines.Count)
                         {
-                            Match match = regexKMLOffset.Match(lines[kmlElementWithOffsetAndSize.offsetLineNumber]);
+                            Match match = regexKMLOffset.Match(lines[kmlElementWithOffset.offsetLineNumber]);
                             if (match.Success)
-                                lines[kmlElementWithOffsetAndSize.offsetLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlElementWithOffsetAndSize.OffsetX, kmlElementWithOffsetAndSize.OffsetY, match.Groups["suffix"].ToString());
-                        }
-                        if (kmlElementWithOffsetAndSize.sizeLineNumber >= 0 && kmlElementWithOffsetAndSize.sizeLineNumber < lines.Count)
-                        {
-                            Match match = regexKMLSize.Match(lines[kmlElementWithOffsetAndSize.sizeLineNumber]);
-                            if (match.Success)
-                                lines[kmlElementWithOffsetAndSize.sizeLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlElementWithOffsetAndSize.SizeWidth, kmlElementWithOffsetAndSize.SizeHeight, match.Groups["suffix"].ToString());
+                                lines[kmlElementWithOffset.offsetLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlElementWithOffset.OffsetX, kmlElementWithOffset.OffsetY, match.Groups["suffix"].ToString());
                         }
 
-                        if (kmlElement is KMLButton)
+                        if(kmlElement is KMLElementWithOffsetAndSize)
                         {
-                            KMLButton kmlButton = (KMLButton)kmlElement;
-                            if (kmlButton.elementLineNumber >= 0 && kmlButton.elementLineNumber < lines.Count)
+                            KMLElementWithOffsetAndSize kmlElementWithOffsetAndSize = (KMLElementWithOffsetAndSize)kmlElement;
+                            if (kmlElementWithOffsetAndSize.sizeLineNumber >= 0 && kmlElementWithOffsetAndSize.sizeLineNumber < lines.Count)
                             {
-                                Match match = regexKMLButton.Match(lines[kmlButton.elementLineNumber]);
+                                Match match = regexKMLSize.Match(lines[kmlElementWithOffsetAndSize.sizeLineNumber]);
                                 if (match.Success)
-                                    lines[kmlButton.elementLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlButton.Number, match.Groups["suffix"].ToString());
+                                    lines[kmlElementWithOffsetAndSize.sizeLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlElementWithOffsetAndSize.SizeWidth, kmlElementWithOffsetAndSize.SizeHeight, match.Groups["suffix"].ToString());
                             }
-                            if (kmlButton.typeLineNumber >= 0 && kmlButton.typeLineNumber < lines.Count)
+
+                            if (kmlElement is KMLElementWithOffsetAndSizeAndDown)
                             {
-                                Match match = regexKMLButtonType.Match(lines[kmlButton.typeLineNumber]);
-                                if (match.Success)
-                                    lines[kmlButton.typeLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlButton.Type, match.Groups["suffix"].ToString());
+                                KMLElementWithOffsetAndSizeAndDown kmlElementWithOffsetAndSizeAndDown = (KMLElementWithOffsetAndSizeAndDown)kmlElement;
+                                if (kmlElementWithOffsetAndSizeAndDown.DownX != null && kmlElementWithOffsetAndSizeAndDown.DownY != null
+                                    && kmlElementWithOffsetAndSizeAndDown.downLineNumber >= 0 && kmlElementWithOffsetAndSizeAndDown.downLineNumber < lines.Count)
+                                {
+                                    //TODO Take into account that DownX and DownY can be added or removed (insert or remove a line)!
+                                    Match match = regexKMLButtonDown.Match(lines[kmlElementWithOffsetAndSizeAndDown.downLineNumber]);
+                                    if (match.Success)
+                                        lines[kmlElementWithOffsetAndSizeAndDown.downLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlElementWithOffsetAndSizeAndDown.DownX, kmlElementWithOffsetAndSizeAndDown.DownY, match.Groups["suffix"].ToString());
+                                }
                             }
-                            if (kmlButton.downLineNumber >= 0 && kmlButton.downLineNumber < lines.Count)
+
+                            if (kmlElement is KMLButton)
                             {
-                                Match match = regexKMLSize.Match(lines[kmlButton.downLineNumber]);
-                                if (match.Success)
-                                    lines[kmlButton.downLineNumber] = string.Format("{0}{1} {2}{3}", match.Groups["prefix"].ToString(), kmlButton.DownX, kmlButton.DownY, match.Groups["suffix"].ToString());
+                                KMLButton kmlButton = (KMLButton)kmlElement;
+                                if (kmlButton.elementLineNumber >= 0 && kmlButton.elementLineNumber < lines.Count)
+                                {
+                                    Match match = regexKMLButton.Match(lines[kmlButton.elementLineNumber]);
+                                    if (match.Success)
+                                        lines[kmlButton.elementLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlButton.Number, match.Groups["suffix"].ToString());
+                                }
+                                if (kmlButton.typeLineNumber >= 0 && kmlButton.typeLineNumber < lines.Count)
+                                {
+                                    Match match = regexKMLButtonType.Match(lines[kmlButton.typeLineNumber]);
+                                    if (match.Success)
+                                        lines[kmlButton.typeLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlButton.Type, match.Groups["suffix"].ToString());
+                                }
                             }
-                        }
-                        else if (kmlElement is KMLAnnunciator)
-                        {
-                            KMLAnnunciator kmlAnnunciator = (KMLAnnunciator)kmlElement;
-                            if (kmlAnnunciator.elementLineNumber >= 0 && kmlAnnunciator.elementLineNumber < lines.Count)
+                            else if (kmlElement is KMLAnnunciator)
                             {
-                                Match match = regexKMLAnnunciator.Match(lines[kmlAnnunciator.elementLineNumber]);
-                                if (match.Success)
-                                    lines[kmlAnnunciator.elementLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlAnnunciator.Number, match.Groups["suffix"].ToString());
+                                KMLAnnunciator kmlAnnunciator = (KMLAnnunciator)kmlElement;
+                                if (kmlAnnunciator.elementLineNumber >= 0 && kmlAnnunciator.elementLineNumber < lines.Count)
+                                {
+                                    Match match = regexKMLAnnunciator.Match(lines[kmlAnnunciator.elementLineNumber]);
+                                    if (match.Success)
+                                        lines[kmlAnnunciator.elementLineNumber] = string.Format("{0}{1}{2}", match.Groups["prefix"].ToString(), kmlAnnunciator.Number, match.Groups["suffix"].ToString());
+                                }
                             }
                         }
                     }

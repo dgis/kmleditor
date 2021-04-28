@@ -24,14 +24,11 @@ namespace KMLEditor
     public class KMLFile
     {
         private string filename;
-        private bool isRootKMLFile = false;
         private List<string> lines = new List<string>();
-        //string sourceCode = "";
         public bool isDirty;
 
-        public KMLFile(bool isRootKMLFile)
+        public KMLFile()
         {
-            this.isRootKMLFile = isRootKMLFile;
         }
 
         public string GetFilename()
@@ -48,14 +45,13 @@ namespace KMLEditor
         }
         public string GetSourceCode()
         {
-            return string.Join("\r\n", lines);// sourceCode;
+            return string.Join("\r\n", lines);
         }
 
         public bool ReadFile(string filename)
         {
             this.filename = filename;
 
-            //var sourceCodeText = new StringBuilder();
             string line;
             try
             {
@@ -64,47 +60,43 @@ namespace KMLEditor
                 while (line != null)
                 {
                     lines.Add(line);
-                    //sourceCodeText.AppendLine(line);
                     line = sr.ReadLine();
                 }
                 sr.Close();
-                //sourceCode = sourceCodeText.ToString();
                 return true;
             }
             catch (Exception /* ex */)
             {
-                //Console.WriteLine("Exception: " + e.Message);
+                //Trace.WriteLine("Exception: " + e.Message);
             }
             finally
             {
-                //Console.WriteLine("Executing finally block.");
+                //Trace.WriteLine("Executing finally block.");
             }
             return false;
         }
 
         public bool WriteFile(string saveWithFilename)
         {
-            string filename = saveWithFilename != null ? saveWithFilename : this.filename;
+            this.filename = saveWithFilename != null ? saveWithFilename : this.filename;
 
             try
             {
                 using (StreamWriter sw = new StreamWriter(filename))
                 {
                     foreach (var line in lines)
-                    {
                         sw.WriteLine(line);
-                    }
                 }
                 isDirty = false;
                 return true;
             }
             catch (Exception /* ex */)
             {
-                //Console.WriteLine("Exception: " + e.Message);
+                //Trace.WriteLine("Exception: " + e.Message);
             }
             finally
             {
-                //Console.WriteLine("Executing finally block.");
+                //Trace.WriteLine("Executing finally block.");
             }
             return false;
         }

@@ -48,9 +48,11 @@ namespace KMLEditor
         {
             id = from.id;
             elementLineNumber = from.elementLineNumber;
-            isDirty = from.isDirty;
             kmlFile = from.kmlFile;
             isSelected = from.isSelected;
+
+            isDirty = true;
+
             return this;
         }
         public virtual KMLElement Clone()
@@ -186,6 +188,8 @@ namespace KMLEditor
                     kmlElementWithOffsetAndSizeAndDown.downY = downResized.Y;
                 }
             }
+
+            isDirty = true;
         }
 
         public void BackupBeforeDragging()
@@ -279,6 +283,8 @@ namespace KMLEditor
                 }
             }
             rectangle = newRectangle;
+
+            isDirty = true;
         }
 
         public override KMLElement CopyFrom(KMLElement from)
@@ -345,6 +351,8 @@ namespace KMLEditor
         public override void Resize(RectangleF before, RectangleF after, bool updateDown)
         {
             rectangle.Location = Utils.Resize(dragRectangle.Location, before, after);
+
+            isDirty = true;
         }
     }
 

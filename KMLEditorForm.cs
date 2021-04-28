@@ -29,11 +29,14 @@ namespace KMLEditor
     {
         private KMLFileManager kmlFileManager = new KMLFileManager();
         private UndoManager undoManager = new UndoManager();
+
         private float zoom = 1.0f;
         private static float zoomFactor = 1.25f;
         private float maxZoom = (float)Math.Pow(zoomFactor, 21);
         private float minZoom = (float)Math.Pow(zoomFactor, -7);
 
+        //private Size bitmapMargin = new Size(0, 0);
+        private Size bitmapMargin = new Size(100, 100);
         private Bitmap bitmap;
         class UIElementForKMLFile {
             public TabPage tabPage;
@@ -72,7 +75,6 @@ namespace KMLEditor
 
             UpdateUndoMenuAndToolbar();
 
-            scrollingControlContainer.VirtualSize = new Size(0, 0);
             scrollingControlContainer.ContentMouseWheel += ScrolledControl_MouseWheel;
             scrollingControlContainer.ContentMouseDown += ScrolledControl_MouseDown;
             scrollingControlContainer.ContentMouseMove += ScrolledControl_MouseMove;
@@ -83,8 +85,7 @@ namespace KMLEditor
             penForegroundButtonDown.DashStyle = DashStyle.Dash;
             penForegroundButtonDownSelected.DashStyle = DashStyle.Dash;
 
-            toolStripComboBoxDownPart.SelectedIndex = 0;
-
+            Cleanup();
             UpdateZoomStatus();
         }
 
@@ -109,6 +110,7 @@ namespace KMLEditor
         private void KMLEditorForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             Cleanup();
+            InitializeForDisplay();
         }
 
         private void KMLEditorForm_DragDrop(object sender, DragEventArgs e)
@@ -136,7 +138,7 @@ namespace KMLEditor
                 e.Effect = DragDropEffects.None;
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItemOpen_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "kml files (*.kml)|*.kml|All files (*.*)|*.*";
@@ -146,14 +148,14 @@ namespace KMLEditor
                 OpenFile(openFileDialog.FileName);
         }
 
-        private void reloadToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItemReload_Click(object sender, EventArgs e)
         {
             KMLFile rootKMLFile = kmlFileManager.GetRootFile();
             if(rootKMLFile != null)
                 OpenFile(rootKMLFile.GetFilename());
         }
 
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItemSave_Click(object sender, EventArgs e)
         {
             foreach (var item in uiElementPerKMLFile)
             {
@@ -168,7 +170,7 @@ namespace KMLEditor
             }
         }
 
-        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItemSaveAs_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "kml files (*.kml)|*.kml|All files (*.*)|*.*";
@@ -188,6 +190,13 @@ namespace KMLEditor
                         MessageBox.Show("Cannot save this file!");
                 }
             }
+        }
+
+        private void toolStripMenuItemClose_Click(object sender, EventArgs e)
+        {
+            Cleanup();
+            UpdateZoomStatus();
+            InvalidateDisplay();
         }
 
         private void toolStripButtonUndo_Click(object sender, EventArgs e)
@@ -277,7 +286,7 @@ namespace KMLEditor
             Graphics graphics = e.Graphics;
 
             Point virtualPoint = scrollingControlContainer.VirtualPoint;
-            e.Graphics.TranslateTransform(-virtualPoint.X, -virtualPoint.Y);
+            e.Graphics.TranslateTransform(bitmapMargin.Width - virtualPoint.X, bitmapMargin.Height - virtualPoint.Y);
             e.Graphics.ScaleTransform(zoom, zoom);
             e.Graphics.SmoothingMode = SmoothingMode.None;
             e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
@@ -406,10 +415,10 @@ namespace KMLEditor
 
             //e.Location -> is scrollingControlContainer based coords with no zoom
             //this.scrollingControlContainer.VirtualPoint -> is scrollingControlContainer based coords with no zoom
-            scrollingControlContainer.VirtualSize = new Size((int)(bitmap.Width * zoom), (int)(bitmap.Height * zoom));
+            UpdateVirtualSizeWithBitmapSize();
             this.scrollingControlContainer.ScrollTo(new Point(
-                (int)((float)(zoom / previousZoom) * (e.Location.X + scrollingControlContainer.VirtualPoint.X) - e.Location.X),
-                (int)((float)(zoom / previousZoom) * (e.Location.Y + scrollingControlContainer.VirtualPoint.Y) - e.Location.Y)));
+                (int)((float)(zoom / previousZoom) * (e.Location.X + scrollingControlContainer.VirtualPoint.X - bitmapMargin.Width) - e.Location.X + bitmapMargin.Width),
+                (int)((float)(zoom / previousZoom) * (e.Location.Y + scrollingControlContainer.VirtualPoint.Y - bitmapMargin.Height) - e.Location.Y + bitmapMargin.Height)));
 
             UpdateZoomStatus();
             InvalidateDisplay();
@@ -429,7 +438,8 @@ namespace KMLEditor
             if (e.Button != MouseButtons.Left)
                 return false;
 
-            Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X) / zoom), (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y) / zoom));
+            Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X - bitmapMargin.Width) / zoom),
+                (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y - bitmapMargin.Height) / zoom));
 
             toolStripStatusLabelCoordinates.Text = string.Format("{0},{1}", location.X, location.Y);
 
@@ -516,7 +526,8 @@ namespace KMLEditor
                 selectedElementsBeforeRectangleSelection.AddRange(selectedElements);
             }
 
-            Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X) / zoom), (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y) / zoom));
+            Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X - bitmapMargin.Width) / zoom),
+                (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y - bitmapMargin.Height) / zoom));
 
             toolStripStatusLabelCoordinates.Text = string.Format("{0},{1}", location.X, location.Y);
 
@@ -530,8 +541,8 @@ namespace KMLEditor
             {
                 // Update the rectangular selection
                 rectangleScaledSelection = new RectangleF(
-                    (pointSelectionStartLocation.X + scrollingControlContainer.VirtualPoint.X) / zoom,
-                    (pointSelectionStartLocation.Y + scrollingControlContainer.VirtualPoint.Y) / zoom,
+                    (pointSelectionStartLocation.X + scrollingControlContainer.VirtualPoint.X - bitmapMargin.Width) / zoom,
+                    (pointSelectionStartLocation.Y + scrollingControlContainer.VirtualPoint.Y - bitmapMargin.Height) / zoom,
                     deltaX / zoom,
                     deltaY / zoom
                 );
@@ -666,7 +677,8 @@ namespace KMLEditor
             {
                 // Mouse click event (Down and Up)
 
-                Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X) / zoom), (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y) / zoom));
+                Point location = new Point((int)((e.Location.X + scrollingControlContainer.VirtualPoint.X - bitmapMargin.Width) / zoom),
+                    (int)((e.Location.Y + scrollingControlContainer.VirtualPoint.Y - bitmapMargin.Width) / zoom));
 
                 KMLElementWithOffset resultElement;
                 kmlFileManager.HitTest(location, out resultElement, !toolStripButtonAllowBackgroundSelection.Checked);
@@ -876,13 +888,19 @@ namespace KMLEditor
                 listBoxSelectedElement.Items.Add(kmlElement);
             listBoxSelectedElement.EndUpdate();
 
+            toolStripMenuItemReload.Enabled = true;
+            toolStripMenuItemSave.Enabled = true;
+            toolStripMenuItemSaveAs.Enabled = true;
+            toolStripMenuItemClose.Enabled = true;
+            toolStripMenuItemSelectAll.Enabled = true;
+
             ResumeLayout(false);
             PerformLayout();
 
             if(kmlFileManager.BitmapFilename != null)
             {
                 bitmap = new Bitmap(kmlFileManager.RootBasePath + kmlFileManager.BitmapFilename);
-                scrollingControlContainer.VirtualSize = new Size((int)(bitmap.Width * zoom), (int)(bitmap.Height * zoom));
+                UpdateVirtualSizeWithBitmapSize();
             }
 
             InvalidateDisplay();
@@ -891,20 +909,33 @@ namespace KMLEditor
         private void Cleanup()
         {
             kmlFileManager.Cleanup();
-            zoom = 1.0f;
-            scrollingControlContainer.VirtualPoint = new Point(0, 0);
-            scrollingControlContainer.VirtualSize = new Size(10, 10);
             if (bitmap != null)
             {
                 bitmap.Dispose();
                 bitmap = null;
             }
             uiElementPerKMLFile.Clear();
-
             tabControlKMLFiles.Controls.Clear();
             selectedElements.Clear();
+            zoom = 1.0f;
+            scrollingControlContainer.VirtualPoint = new Point(0, 0);
+
+            toolStripMenuItemReload.Enabled = false;
+            toolStripMenuItemSave.Enabled = false;
+            toolStripMenuItemSaveAs.Enabled = false;
+            toolStripMenuItemClose.Enabled = false;
+            toolStripMenuItemSelectAll.Enabled = false;
+
+            UpdateVirtualSizeWithBitmapSize();
             UpdatePropertyGridAndListBoxForSelectedElement();
             UpdateRectangleWithSelectedElements();
+        }
+        private void UpdateVirtualSizeWithBitmapSize()
+        {
+            if(bitmap != null && bitmap.Width > 0 && bitmap.Height > 0)
+                scrollingControlContainer.VirtualSize = new Size((int)((bitmap.Width + 2 * bitmapMargin.Width) * zoom), (int)((bitmap.Height + 2 * bitmapMargin.Height) * zoom));
+            else
+                scrollingControlContainer.VirtualSize = new Size(2 * bitmapMargin.Width, 2 * bitmapMargin.Height);
         }
 
         private void UpdateAfterDoOperation()
@@ -945,8 +976,8 @@ namespace KMLEditor
 
         private void UpdateUndoMenuAndToolbar()
         {
-            undoToolStripMenuItem.Enabled = toolStripButtonUndo.Enabled = undoManager.CanUndo();
-            redoToolStripMenuItem.Enabled = toolStripButtonRedo.Enabled = undoManager.CanRedo();
+            toolStripMenuItemUndo.Enabled = toolStripButtonUndo.Enabled = undoManager.CanUndo();
+            toolStripMenuItemRedo.Enabled = toolStripButtonRedo.Enabled = undoManager.CanRedo();
         }
         private void UpdateZoomStatus()
         {
