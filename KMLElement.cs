@@ -63,24 +63,27 @@ namespace KMLEditor
 
     public class KMLElementWithOffset : KMLElement
     {
-        protected RectangleF rectangle;
-        protected RectangleF dragRectangle;
-        protected float? downX = null;
-        protected float? downY = null;
-        protected float? dragDownX = null;
-        protected float? dragDownY = null;
+        public KMLElementWithOffset relativeTo = null;
 
+        protected RectangleF rectangle; // Always in absolute coords
+        protected RectangleF dragRectangle; // Always in absolute coords
+        protected float? downX = null; // Always in absolute coords
+        protected float? downY = null; // Always in absolute coords
+        protected float? dragDownX = null; // Always in absolute coords
+        protected float? dragDownY = null; // Always in absolute coords
+
+        // Can be in relative coords if relativeTo is not null
         [Description(@"Offset sets the position of the element.")]
-        public int OffsetX { get => (int)rectangle.X; set { if (rectangle.X != value) { rectangle.X = value; isDirty = true; } } }
+        public int OffsetX { get => (int)rectangle.X - (relativeTo == null ? 0 : relativeTo.OffsetX); set { if (rectangle.X - (relativeTo == null ? 0 : relativeTo.OffsetX) != value) { rectangle.X = value + (relativeTo == null ? 0 : relativeTo.OffsetX); isDirty = true; } } }
         [Description(@"Offset sets the position of the element.")]
-        public int OffsetY { get => (int)rectangle.Y; set { if (rectangle.Y != value) { rectangle.Y = value; isDirty = true; } } }
+        public int OffsetY { get => (int)rectangle.Y - (relativeTo == null ? 0 : relativeTo.OffsetY); set { if (rectangle.Y - (relativeTo == null ? 0 : relativeTo.OffsetY) != value) { rectangle.Y = value + (relativeTo == null ? 0 : relativeTo.OffsetY); isDirty = true; } } }
         public int offsetLineNumber = -1;
 
 
 
         public bool HitTest(Point location)
         {
-            if (new RectangleF(OffsetX, OffsetY, rectangle.Width, rectangle.Height).Contains(location)
+            if (new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height).Contains(location)
                 || (downX != null && downY != null && new RectangleF((float)downX, (float)downY, rectangle.Width, rectangle.Height).Contains(location)))
                 return true;
             return false;
@@ -144,7 +147,7 @@ namespace KMLEditor
                     case SelectionPart.Element:
                         return new RectangleF((int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height);
                     case SelectionPart.Inside:
-                        return new RectangleF(OffsetX + selectionMarginF + 1, OffsetY + selectionMarginF + 1, 2 * insideSelectionMarginF, 2 * insideSelectionMarginF);
+                        return new RectangleF((int)rectangle.X + selectionMarginF + 1, (int)rectangle.Y + selectionMarginF + 1, 2 * insideSelectionMarginF, 2 * insideSelectionMarginF);
                     case SelectionPart.DownElement:
                         if (downX != null && downY != null)
                             return new RectangleF((float)downX, (float)downY, rectangle.Width, 2 * rectangle.Height);
@@ -154,21 +157,21 @@ namespace KMLEditor
                             return new RectangleF((float)(downX) + rectangle.Width - selectionMarginF - 1 - 2 * insideSelectionMarginF, (float)downY + rectangle.Height - selectionMarginF - 1 - 2 * insideSelectionMarginF, 2 * insideSelectionMarginF, 2 * insideSelectionMarginF);
                         break;
                     case SelectionPart.TopLeft:
-                        return new RectangleF(OffsetX - selectionMarginF, OffsetY - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X - selectionMarginF, (int)rectangle.Y - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Top:
-                        return new RectangleF(OffsetX + selectionMarginF, OffsetY - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X + selectionMarginF, (int)rectangle.Y - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.TopRight:
-                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X + rectangle.Width - selectionMarginF, (int)rectangle.Y - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Right:
-                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X + rectangle.Width - selectionMarginF, (int)rectangle.Y + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
                     case SelectionPart.BottomRight:
-                        return new RectangleF(OffsetX + rectangle.Width - selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X + rectangle.Width - selectionMarginF, (int)rectangle.Y + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Bottom:
-                        return new RectangleF(OffsetX + selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X + selectionMarginF, (int)rectangle.Y + rectangle.Height - selectionMarginF, rectangle.Width - 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.BottomLeft:
-                        return new RectangleF(OffsetX - selectionMarginF, OffsetY + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X - selectionMarginF, (int)rectangle.Y + rectangle.Height - selectionMarginF, 2 * selectionMarginF, 2 * selectionMarginF);
                     case SelectionPart.Left:
-                        return new RectangleF(OffsetX - selectionMarginF, OffsetY + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
+                        return new RectangleF((int)rectangle.X - selectionMarginF, (int)rectangle.Y + selectionMarginF, 2 * selectionMarginF, rectangle.Height - 2 * selectionMarginF);
                 }
             }
             return new RectangleF();
@@ -305,6 +308,29 @@ namespace KMLEditor
         }
     }
 
+    public class KMLLcd : KMLElementWithOffset
+    {
+        public KMLLcd()
+        {
+            this.rectangle.Width = 50;
+            this.rectangle.Height = 50;
+        }
+
+        public override string Element { get => "Lcd"; }
+
+        protected override bool AllowPart(SelectionPart part)
+        {
+            return part == SelectionPart.Inside || part == SelectionPart.Element;
+        }
+
+        public override void Resize(RectangleF before, RectangleF after, bool updateDown)
+        {
+            rectangle.Location = Utils.Resize(dragRectangle.Location, before, after);
+
+            isDirty = true;
+        }
+    }
+
     public class KMLElementWithOffsetAndSize : KMLElementWithOffset
     {
         [Description(@"Size sets the size of the element.")]
@@ -332,28 +358,6 @@ namespace KMLEditor
     public class KMLBackground : KMLElementWithOffsetAndSize
     {
         public override string Element { get => "Background"; }
-    }
-
-    public class KMLLcd : KMLElementWithOffset
-    {
-        public KMLLcd() {
-            this.rectangle.Width = 50;
-            this.rectangle.Height = 50;
-        }
-
-        public override string Element { get => "Lcd"; }
-
-        protected override bool AllowPart(SelectionPart part)
-        {
-            return part == SelectionPart.Inside || part == SelectionPart.Element;
-        }
-
-        public override void Resize(RectangleF before, RectangleF after, bool updateDown)
-        {
-            rectangle.Location = Utils.Resize(dragRectangle.Location, before, after);
-
-            isDirty = true;
-        }
     }
 
     public class KMLDigit : KMLElementWithOffsetAndSize

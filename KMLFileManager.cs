@@ -156,6 +156,8 @@ namespace KMLEditor
                 KMLDigit currentKMLDigit = null;
                 KMLButton currentButton = null;
                 KMLAnnunciator currentKMLAnnunciator = null;
+                bool hasDigit = false;
+                KMLLcd lcd = null;
 
                 Match match;
 
@@ -187,6 +189,7 @@ namespace KMLEditor
                         currentKMLLcd.kmlFile = kmlFile;
                         currentKMLLcd.elementLineNumber = i;
                         AddKMLElement(currentKMLLcd);
+                        lcd = currentKMLLcd;
                     }
                     else if (trimmedLine.StartsWith("Digit"))
                     {
@@ -194,9 +197,12 @@ namespace KMLEditor
                         match = regexKMLDigit.Match(line);
                         if (match.Success)
                         {
+                            hasDigit = true;
                             currentKMLDigit = new KMLDigit();
                             currentKMLDigit.kmlFile = kmlFile;
                             currentKMLDigit.elementLineNumber = i;
+                            if(hasDigit)
+                                currentKMLDigit.relativeTo = lcd;
                             AddKMLElement(currentKMLDigit);
                         }
                     }
@@ -211,6 +217,8 @@ namespace KMLEditor
                             currentKMLAnnunciator.kmlFile = kmlFile;
                             currentKMLAnnunciator.elementLineNumber = i;
                             currentKMLAnnunciator.Number = number;
+                            if (hasDigit)
+                                currentKMLAnnunciator.relativeTo = lcd;
                             AddKMLElement(currentKMLAnnunciator);
                         }
                     }

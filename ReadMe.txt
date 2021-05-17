@@ -41,8 +41,9 @@ You should have received a copy of the GNU General Public License along with thi
 TODO
 
 * Center the canvas.
+* KML with Digit has Digit and Annonciator relative to the LCD, but moving the LCD does not move the digit and annonciator!
 
-* Allow to add and remove an element.
+* Allow to add and remove an element (insert/remove lines!).
 * Allow copy/paste.
 * Warning on issues (duplicate button or annonciator, multiple display or digit, or other...).
 * Create backup before saving.
