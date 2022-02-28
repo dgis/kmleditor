@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("KML Editor")]
-[assembly: AssemblyCopyright("Copyright © 2021 Regis COSNIER")]
+[assembly: AssemblyCopyright("Copyright © 2021-2022 Regis COSNIER, All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

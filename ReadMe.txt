@@ -6,6 +6,8 @@ KML Editor is a small editor to edit the KML files (skins/faceplates) for the em
 It is focus on the edition of the graphical elements.
 
 Features:
+* GPL license.
+* Need of the Microsoft Framework.NET 4.6.1.
 * Open KML file from the menu, command line or drag'n drop.
 * Zoom using the mouse wheel.
 * Multiple selection with the mouse and the Ctrl key, or with a rectangular mouse selection, or from the list box.
