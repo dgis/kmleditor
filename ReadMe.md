@@ -18,6 +18,8 @@ Features:
 The application is distributed with the license GPL and you can find the source code here:
 https://github.com/dgis/kmleditor
 
+![snapshot-01](https://github.com/user-attachments/assets/f7f308e6-2a98-452f-86b9-29a3940af99e)
+
 
 LINKS
 
